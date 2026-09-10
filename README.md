@@ -1,6 +1,6 @@
 <div align="center">
   <br/>
-  <img src="assets/shuri.jpg" width="350" alt="Shuri logo"/>
+  <img src="assets/banner.jpg" width="350" alt="Shuri logo"/>
   <p><i>See synchronized Spotify lyrics inside VS Code while coding.</i></p>
 <p>
   <a href="https://marketplace.visualstudio.com/items?itemName=therepanic.spotilyrics"><img src="https://img.shields.io/badge/VSCode-Extension-blue?style=flat&logo=visualstudiocode" /></a>

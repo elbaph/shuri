@@ -44,7 +44,7 @@ export async function activate(context: vscode.ExtensionContext) {
                         localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')],
                     }
                 );
-                panel.iconPath = vscode.Uri.file(path.join(context.extensionPath, 'icon.png'));
+                panel.iconPath = vscode.Uri.file(path.join(context.extensionPath, 'assets/icon.png'));
                 const tracksCacheMaxSize: number = Number(
                     vscode.workspace.getConfiguration('shuri').get('tracksCacheMaxSize')
                 );
@@ -122,7 +122,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 await createServer(context);
                 await printFrame(context);
                 panel.title = 'Spotify Lyrics';
-                panel.iconPath = vscode.Uri.file(path.join(context.extensionPath, 'icon.png'));
+                panel.iconPath = vscode.Uri.file(path.join(context.extensionPath, 'assets/icon.png'));
             }
         })
     );
@@ -447,7 +447,7 @@ function updatePanelMeta(
     panel.title = truncateTitle(title);
 
     panel.iconPath = songIcon
-        ? vscode.Uri.file(path.join(context.extensionPath, 'icon.png'))
+        ? vscode.Uri.file(path.join(context.extensionPath, 'assets/icon.png'))
         : vscode.Uri.parse(imageUrl);
 }
 
