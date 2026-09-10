@@ -1,8 +1,8 @@
 {
-    "name": "spotilyrics",
-    "displayName": "spotilyrics",
+    "name": "shuri",
+    "displayName": "Vscode & Spotify",
     "description": "🎧 See synchronized Spotify lyrics inside VS Code while coding",
-    "publisher": "therepanic",
+    "publisher": "o-p",
     "version": "1.1.2",
     "engines": {
         "vscode": "^1.66.0"
@@ -12,54 +12,54 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:spotilyrics.lyrics",
-        "onCommand:spotilyrics.logout",
-        "onCommand:spotilyrics.tracksCacheMaxSize",
-        "onCommand:spotilyrics.port",
-        "onCommand:spotilyrics.mobileMode",
-        "onCommand:spotilyrics.songTitle",
-        "onCommand:spotilyrics.songIcon",
-        "onCommand:spotilyrics.songArtists"
+        "onCommand:shuri.lyrics",
+        "onCommand:shuri.logout",
+        "onCommand:shuri.tracksCacheMaxSize",
+        "onCommand:shuri.port",
+        "onCommand:shuri.mobileMode",
+        "onCommand:shuri.songTitle",
+        "onCommand:shuri.songIcon",
+        "onCommand:shuri.songArtists"
     ],
     "main": "./out/extension.js",
     "repository": {
         "type": "git",
-        "url": "https://github.com/therepanic/spotilyrics.git"
+        "url": "https://github.com/elbaph/shuri.git"
     },
     "contributes": {
         "configuration": {
-            "title": "spotilyrics",
+            "title": "Shuri",
             "properties": {
-                "spotilyrics.port": {
+                "shuri.port": {
                     "type": "number",
-                    "default": 8000,
+                    "default": 5566,
                     "minimum": 1024,
                     "maximum": 65535,
                     "description": "Port used for the Spotify OAuth callback."
                 },
-                "spotilyrics.tracksCacheMaxSize": {
+                "shuri.tracksCacheMaxSize": {
                     "type": "number",
                     "default": 10,
                     "minimum": 1,
                     "maximum": 9007199254740991,
                     "description": "Maximum cache size for tracks."
                 },
-                "spotilyrics.mobileMode": {
+                "shuri.mobileMode": {
                     "type": "boolean",
                     "default": false,
                     "description": "Mobile mode: black unplayed lines, white played lines."
                 },
-                "spotilyrics.songTitle": {
+                "shuri.songTitle": {
                     "type": "boolean",
                     "default": true,
                     "description": "Toggle the song title in the lyrics panel."
                 },
-                "spotilyrics.songIcon": {
+                "shuri.songIcon": {
                     "type": "boolean",
                     "default": true,
                     "description": "Toggle the song icon in the lyrics panel."
                 },
-                "spotilyrics.songArtists": {
+                "shuri.songArtists": {
                     "type": "boolean",
                     "default": true,
                     "description": "Toggle the song artists in the lyrics panel."
@@ -68,35 +68,35 @@
         },
         "commands": [
             {
-                "command": "spotilyrics.lyrics",
-                "title": "Show Spotify Lyrics via Spotilyrics"
+                "command": "shuri.lyrics",
+                "title": "Show Spotify Lyrics via Shuri"
             },
             {
-                "command": "spotilyrics.logout",
-                "title": "Logout from Spotilyrics"
+                "command": "shuri.logout",
+                "title": "Logout from Shuri"
             },
             {
-                "command": "spotilyrics.tracksCacheMaxSize",
+                "command": "shuri.tracksCacheMaxSize",
                 "title": "Set Tracks Cache Max Size"
             },
             {
-                "command": "spotilyrics.mobileMode",
+                "command": "shuri.mobileMode",
                 "title": "Toggle Mobile Mode"
             },
             {
-                "command": "spotilyrics.port",
+                "command": "shuri.port",
                 "title": "Set Spotify OAuth Callback Port"
             },
             {
-                "command": "spotilyrics.songTitle",
+                "command": "shuri.songTitle",
                 "title": "Toggle Song Title"
             },
             {
-                "command": "spotilyrics.songIcon",
+                "command": "shuri.songIcon",
                 "title": "Toggle Song Icon"
             },
             {
-                "command": "spotilyrics.songArtists",
+                "command": "shuri.songArtists",
                 "title": "Toggle Song Artists"
             }
         ]
@@ -110,7 +110,8 @@
         "lint:fix": "eslint . --fix",
         "format": "prettier --write .",
         "format:check": "prettier --check 'src/**/*.{ts,js}'",
-        "test": "vscode-test"
+        "test": "vscode-test",
+        "package": "vsce package -o shuri-dev.vsix"
     },
     "devDependencies": {
         "@types/colorthief": "^2.6.0",
@@ -122,6 +123,7 @@
         "@typescript-eslint/parser": "^8.41.0",
         "@vscode/test-cli": "^0.0.11",
         "@vscode/test-electron": "^2.5.2",
+        "@vscode/vsce": "^3.9.2",
         "eslint": "^9.34.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.4",

@@ -30,7 +30,7 @@ const provider: LyricsProvider = new LRCLibLyricsProvider();
 
 export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
-        vscode.commands.registerCommand('spotilyrics.lyrics', async () => {
+        vscode.commands.registerCommand('shuri.lyrics', async () => {
             if (panel) {
                 panel.reveal(vscode.ViewColumn.Two);
                 return;
@@ -46,7 +46,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 );
                 panel.iconPath = vscode.Uri.file(path.join(context.extensionPath, 'icon.png'));
                 const tracksCacheMaxSize: number = Number(
-                    vscode.workspace.getConfiguration('spotilyrics').get('tracksCacheMaxSize')
+                    vscode.workspace.getConfiguration('shuri').get('tracksCacheMaxSize')
                 );
                 if (tracksCacheMaxSize) {
                     tracksCache = new LRUCache({
@@ -85,13 +85,13 @@ export async function activate(context: vscode.ExtensionContext) {
                         codeVerifier,
                         codeChallenge,
                         'authorization_code',
-                        `http://127.0.0.1:${vscode.workspace.getConfiguration('spotilyrics').get('port')}/callback`
+                        `http://127.0.0.1:${vscode.workspace.getConfiguration('shuri').get('port')}/callback`
                     );
 
                     vscode.env.openExternal(
                         vscode.Uri.parse(
                             await SpotifyWebApi.getAuthUrl(
-                                vscode.workspace.getConfiguration('spotilyrics').get('port')!,
+                                vscode.workspace.getConfiguration('shuri').get('port')!,
                                 clientId,
                                 codeChallenge
                             )
@@ -112,7 +112,7 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand('spotilyrics.logout', async () => {
+        vscode.commands.registerCommand('shuri.logout', async () => {
             context.secrets.delete('clientId');
             context.secrets.delete('accessToken');
             context.secrets.delete('refreshToken');
@@ -127,7 +127,7 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand('spotilyrics.tracksCacheMaxSize', async () => {
+        vscode.commands.registerCommand('shuri.tracksCacheMaxSize', async () => {
             const MIN = 1,
                 MAX = Number.MAX_SAFE_INTEGER,
                 DEFAULT = 10;
@@ -154,15 +154,15 @@ export async function activate(context: vscode.ExtensionContext) {
             }
             const value = Math.max(MIN, Math.min(MAX, parseInt(input, 10)));
             await vscode.workspace
-                .getConfiguration('spotilyrics')
+                .getConfiguration('shuri')
                 .update('tracksCacheMaxSize', value, vscode.ConfigurationTarget.Global);
             vscode.window.showInformationMessage(`Maximum tracks cache size set to ${value}`);
             tracksCache = new LRUCache({ maxSize: value, sizeCalculation: () => 1 });
         })
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand('spotilyrics.mobileMode', async () => {
-            const config = vscode.workspace.getConfiguration('spotilyrics');
+        vscode.commands.registerCommand('shuri.mobileMode', async () => {
+            const config = vscode.workspace.getConfiguration('shuri');
             const currentValue = config.get<boolean>('mobileMode') ?? false;
             const newValue = !currentValue;
             await config.update('mobileMode', newValue, vscode.ConfigurationTarget.Global);
@@ -175,11 +175,11 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand('spotilyrics.port', async () => {
+        vscode.commands.registerCommand('shuri.port', async () => {
             const MIN = 1024,
                 MAX = 65535,
-                DEFAULT = 8000;
-            const config = vscode.workspace.getConfiguration('spotilyrics');
+                DEFAULT = 5566;
+            const config = vscode.workspace.getConfiguration('shuri');
             const input = await vscode.window.showInputBox({
                 prompt: `Port used for the Spotify OAuth callback. Enter an integer ${MIN}–${MAX}`,
                 value: String(config.get<number>('port') ?? DEFAULT),
@@ -229,8 +229,8 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('spotilyrics.songTitle', async () => {
-            const config = vscode.workspace.getConfiguration('spotilyrics');
+        vscode.commands.registerCommand('shuri.songTitle', async () => {
+            const config = vscode.workspace.getConfiguration('shuri');
             const value = !config.get('songTitle');
             await config.update('songTitle', value, vscode.ConfigurationTarget.Global);
             vscode.window.showInformationMessage(
@@ -239,8 +239,8 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand('spotilyrics.songIcon', async () => {
-            const config = vscode.workspace.getConfiguration('spotilyrics');
+        vscode.commands.registerCommand('shuri.songIcon', async () => {
+            const config = vscode.workspace.getConfiguration('shuri');
             const value = !config.get('songIcon');
             await config.update('songIcon', value, vscode.ConfigurationTarget.Global);
             vscode.window.showInformationMessage(
@@ -249,8 +249,8 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand('spotilyrics.songArtists', async () => {
-            const config = vscode.workspace.getConfiguration('spotilyrics');
+        vscode.commands.registerCommand('shuri.songArtists', async () => {
+            const config = vscode.workspace.getConfiguration('shuri');
             const value = !config.get('songArtists');
             await config.update('songArtists', value, vscode.ConfigurationTarget.Global);
             vscode.window.showInformationMessage(
@@ -299,7 +299,7 @@ async function printFrame(context: vscode.ExtensionContext) {
         const scriptUri = panel.webview.asWebviewUri(
             vscode.Uri.joinPath(context.extensionUri, 'media', scriptName)
         );
-        const port = vscode.workspace.getConfiguration('spotilyrics').get<number>('port') ?? 8000;
+        const port = vscode.workspace.getConfiguration('shuri').get<number>('port') ?? 8000;
         panel.webview.html = html
             .replace('{{PORT}}', String(port))
             .replace('styles.css', cssUri.toString())
@@ -382,7 +382,7 @@ async function createServer(context: vscode.ExtensionContext) {
             res.end('Not Found');
         }
     });
-    server.listen(vscode.workspace.getConfiguration('spotilyrics').get('port'));
+    server.listen(vscode.workspace.getConfiguration('shuri').get('port'));
 }
 
 async function pollSpotifyStat(context: vscode.ExtensionContext) {
@@ -429,9 +429,9 @@ function updatePanelMeta(
         return;
     }
 
-    const songTitle = vscode.workspace.getConfiguration('spotilyrics').get('songTitle');
-    const songArtists = vscode.workspace.getConfiguration('spotilyrics').get('songArtists');
-    const songIcon = vscode.workspace.getConfiguration('spotilyrics').get('songIcon');
+    const songTitle = vscode.workspace.getConfiguration('shuri').get('songTitle');
+    const songArtists = vscode.workspace.getConfiguration('shuri').get('songArtists');
+    const songIcon = vscode.workspace.getConfiguration('shuri').get('songIcon');
 
     let title: string;
     if (songTitle && songArtists) {
@@ -454,7 +454,7 @@ function updatePanelMeta(
 async function updateLyrics(context: vscode.ExtensionContext) {
     if (authState) {
         const mobileMode: boolean =
-            vscode.workspace.getConfiguration('spotilyrics').get('mobileMode') ?? false;
+            vscode.workspace.getConfiguration('shuri').get('mobileMode') ?? false;
         const currentlyPlayingResponse = await SpotifyWebApi.getCurrentlyPlaying(
             authState.accessToken
         );
@@ -558,7 +558,7 @@ async function updateLyrics(context: vscode.ExtensionContext) {
         } else {
             if (currentPlayingState.synchronizedLyricsMap && panel) {
                 const mobileMode: boolean =
-                    vscode.workspace.getConfiguration('spotilyrics').get('mobileMode') ?? false;
+                    vscode.workspace.getConfiguration('shuri').get('mobileMode') ?? false;
                 const value = currentPlayingState.synchronizedLyricsMap.floorEntry(
                     currentlyPlayingResponse.progress_ms
                 );
@@ -627,7 +627,7 @@ async function sendCurrentLyricsToPanel() {
         return;
     }
     const mobileMode: boolean =
-        vscode.workspace.getConfiguration('spotilyrics').get('mobileMode') ?? false;
+        vscode.workspace.getConfiguration('shuri').get('mobileMode') ?? false;
 
     postLyricsToPanel(currentPlayingState, mobileMode);
 
