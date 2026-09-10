@@ -1,7 +1,24 @@
 {
-    "semi": true,
-    "singleQuote": true,
-    "tabWidth": 4,
-    "trailingComma": "es5",
-    "printWidth": 100
+  "semi": false,
+  "tabWidth": 2,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "printWidth": 100,
+  "plugins": ["@trivago/prettier-plugin-sort-imports"],
+  "importOrder": [
+    "^dotenv/config$",
+    "<SEPARATOR>",
+    "<BUILTIN_MODULES>",
+    "<SEPARATOR>",
+    "^(react|react-dom|vue|express|vite|supertest|@playwright\/test)(/.*)?$",
+    "<THIRD_PARTY_MODULES>",
+    "<SEPARATOR>",
+    "^@/(?!.*\\.(?!(?:js|ts|vue|jsx|tsx)$)[^./]+$).*$",
+    "^\\.\\./(?!.*\\.(?!(?:js|ts|vue|jsx|tsx)$)[^./]+$).*$",
+    "^\\./(?!.*\\.(?!(?:js|ts|vue|jsx|tsx)$)[^./]+$).*$",
+    "<SEPARATOR>",
+    "\\.(?:json|css|scss|less|png|jpe?g|gif|svg|webp|ico|md|txt|yaml|yml)$"
+  ],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true
 }

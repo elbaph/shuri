@@ -1,541 +1,540 @@
-const ColorThief = require('colorthief');
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'
+
+const ColorThief = require('colorthief')
 
 const COLORS: string[] = [
-    '#3c2b5e',
-    '#65000b',
-    '#640524',
-    '#06009f',
-    '#1a3c00',
-    '#36362f',
-    '#003c24',
-    '#0c3d00',
-    '#003d00',
-    '#492f00',
-    '#610b3a',
-    '#5d183a',
-    '#002f73',
-    '#35353b',
-    '#353535',
-    '#5f1531',
-    '#650000',
-    '#65000e',
-    '#660000',
-    '#442f37',
-    '#520f68',
-    '#003753',
-    '#133946',
-    '#2f363d',
-    '#393246',
-    '#2a3a09',
-    '#233a2b',
-    '#403038',
-    '#31372b',
-    '#47007e',
-    '#253933',
-    '#003a40',
-    '#0b3d00',
-    '#4a2f00',
-    '#3e3238',
-    '#202f6e',
-    '#552721',
-    '#5c0053',
-    '#3f3138',
-    '#41330e',
-    '#581018',
-    '#00384e',
-    '#23374a',
-    '#442466',
-    '#363628',
-    '#303730',
-    '#5e0b47',
-    '#452f30',
-    '#413316',
-    '#303637',
-    '#281294',
-    '#213168',
-    '#003851',
-    '#003a41',
-    '#480000',
-    '#640f0f',
-    '#2b3832',
-    '#492d35',
-    '#601a14',
-    '#3a3241',
-    '#003368',
-    '#1f3c00',
-    '#4f2c00',
-    '#5d1e16',
-    '#343444',
-    '#001e93',
-    '#630b26',
-    '#650715',
-    '#53243c',
-    '#203c00',
-    '#440082',
-    '#0a3c29',
-    '#1c3c1c',
-    '#193753',
-    '#5e034c',
-    '#372d60',
-    '#2a3643',
-    '#462b4c',
-    '#003949',
-    '#463100',
-    '#1b3b2c',
-    '#4b186e',
-    '#2f363c',
-    '#143c1e',
-    '#003b36',
-    '#003c2e',
-    '#0d3d12',
-    '#30363c',
-    '#31372a',
-    '#502800',
-    '#382f57',
-    '#2f372f',
-    '#58184d',
-    '#650004',
-    '#2b3838',
-    '#001048',
-    '#502000',
-    '#2e3544',
-    '#4c2e00',
-    '#162685',
-    '#003c2b',
-    '#640027',
-    '#650a0e',
-    '#00394c',
-    '#452e3e',
-    '#023753',
-    '#5c0052',
-    '#293931',
-    '#1e393a',
-    '#55233a',
-    '#3a3434',
-    '#383038',
-    '#481810',
-    '#401820',
-    '#65001d',
-    '#2a373e',
-    '#093d17',
-    '#093d20',
-    '#303038',
-    '#393600',
-    '#5a1f30',
-    '#413300',
-    '#0c3c30',
-    '#03394d',
-    '#502820',
-    '#26364d',
-    '#4b2c33',
-    '#5f1b00',
-    '#00326a',
-    '#223845',
-    '#472f2f',
-    '#452c46',
-    '#650016',
-    '#3d3144',
-    '#432d4b',
-    '#002e77',
-    '#00384d',
-    '#2b3924',
-    '#582132',
-    '#002d7a',
-    '#611714',
-    '#202040',
-    '#003465',
-    '#1e306b',
-    '#3b3333',
-    '#5c1f21',
-    '#003754',
-    '#35353c',
-    '#580060',
-    '#103050',
-    '#592223',
-    '#183050',
-    '#452463',
-    '#4b2c34',
-    '#2c3925',
-    '#1c3a3a',
-    '#37370e',
-    '#083070',
-    '#401018',
-];
+  '#3c2b5e',
+  '#65000b',
+  '#640524',
+  '#06009f',
+  '#1a3c00',
+  '#36362f',
+  '#003c24',
+  '#0c3d00',
+  '#003d00',
+  '#492f00',
+  '#610b3a',
+  '#5d183a',
+  '#002f73',
+  '#35353b',
+  '#353535',
+  '#5f1531',
+  '#650000',
+  '#65000e',
+  '#660000',
+  '#442f37',
+  '#520f68',
+  '#003753',
+  '#133946',
+  '#2f363d',
+  '#393246',
+  '#2a3a09',
+  '#233a2b',
+  '#403038',
+  '#31372b',
+  '#47007e',
+  '#253933',
+  '#003a40',
+  '#0b3d00',
+  '#4a2f00',
+  '#3e3238',
+  '#202f6e',
+  '#552721',
+  '#5c0053',
+  '#3f3138',
+  '#41330e',
+  '#581018',
+  '#00384e',
+  '#23374a',
+  '#442466',
+  '#363628',
+  '#303730',
+  '#5e0b47',
+  '#452f30',
+  '#413316',
+  '#303637',
+  '#281294',
+  '#213168',
+  '#003851',
+  '#003a41',
+  '#480000',
+  '#640f0f',
+  '#2b3832',
+  '#492d35',
+  '#601a14',
+  '#3a3241',
+  '#003368',
+  '#1f3c00',
+  '#4f2c00',
+  '#5d1e16',
+  '#343444',
+  '#001e93',
+  '#630b26',
+  '#650715',
+  '#53243c',
+  '#203c00',
+  '#440082',
+  '#0a3c29',
+  '#1c3c1c',
+  '#193753',
+  '#5e034c',
+  '#372d60',
+  '#2a3643',
+  '#462b4c',
+  '#003949',
+  '#463100',
+  '#1b3b2c',
+  '#4b186e',
+  '#2f363c',
+  '#143c1e',
+  '#003b36',
+  '#003c2e',
+  '#0d3d12',
+  '#30363c',
+  '#31372a',
+  '#502800',
+  '#382f57',
+  '#2f372f',
+  '#58184d',
+  '#650004',
+  '#2b3838',
+  '#001048',
+  '#502000',
+  '#2e3544',
+  '#4c2e00',
+  '#162685',
+  '#003c2b',
+  '#640027',
+  '#650a0e',
+  '#00394c',
+  '#452e3e',
+  '#023753',
+  '#5c0052',
+  '#293931',
+  '#1e393a',
+  '#55233a',
+  '#3a3434',
+  '#383038',
+  '#481810',
+  '#401820',
+  '#65001d',
+  '#2a373e',
+  '#093d17',
+  '#093d20',
+  '#303038',
+  '#393600',
+  '#5a1f30',
+  '#413300',
+  '#0c3c30',
+  '#03394d',
+  '#502820',
+  '#26364d',
+  '#4b2c33',
+  '#5f1b00',
+  '#00326a',
+  '#223845',
+  '#472f2f',
+  '#452c46',
+  '#650016',
+  '#3d3144',
+  '#432d4b',
+  '#002e77',
+  '#00384d',
+  '#2b3924',
+  '#582132',
+  '#002d7a',
+  '#611714',
+  '#202040',
+  '#003465',
+  '#1e306b',
+  '#3b3333',
+  '#5c1f21',
+  '#003754',
+  '#35353c',
+  '#580060',
+  '#103050',
+  '#592223',
+  '#183050',
+  '#452463',
+  '#4b2c34',
+  '#2c3925',
+  '#1c3a3a',
+  '#37370e',
+  '#083070',
+  '#401018',
+]
 
 function hexToRgb(hex: string): [number, number, number] {
-    const h = hex.replace('#', '').trim();
-    const full =
-        h.length === 3
-            ? h
-                  .split('')
-                  .map((ch) => ch + ch)
-                  .join('')
-            : h;
-    const n = parseInt(full, 16);
-    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  const h = hex.replace('#', '').trim()
+  const full =
+    h.length === 3
+      ? h
+          .split('')
+          .map((ch) => ch + ch)
+          .join('')
+      : h
+  const n = parseInt(full, 16)
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }
 
 function rgbToLab([r, g, b]: [number, number, number]) {
-    let [R, G, B] = [r / 255, g / 255, b / 255];
-    [R, G, B] = [R, G, B].map((v) =>
-        v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
-    );
-    const X = (R * 0.4124564 + G * 0.3575761 + B * 0.1804375) / 0.95047;
-    const Y = R * 0.2126729 + G * 0.7151522 + B * 0.072175;
-    const Z = (R * 0.0193339 + G * 0.119192 + B * 0.9503041) / 1.08883;
-    const f = (t: number) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
-    const fx = f(X),
-        fy = f(Y),
-        fz = f(Z);
-    const L = Math.max(0, 116 * fy - 16);
-    const a = 500 * (fx - fy);
-    const b2 = 200 * (fy - fz);
-    return { L, a, b: b2 };
+  let [R, G, B] = [r / 255, g / 255, b / 255]
+  ;[R, G, B] = [R, G, B].map((v) => (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)))
+  const X = (R * 0.4124564 + G * 0.3575761 + B * 0.1804375) / 0.95047
+  const Y = R * 0.2126729 + G * 0.7151522 + B * 0.072175
+  const Z = (R * 0.0193339 + G * 0.119192 + B * 0.9503041) / 1.08883
+  const f = (t: number) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116)
+  const fx = f(X),
+    fy = f(Y),
+    fz = f(Z)
+  const L = Math.max(0, 116 * fy - 16)
+  const a = 500 * (fx - fy)
+  const b2 = 200 * (fy - fz)
+  return { L, a, b: b2 }
 }
 function deltaE(l1: any, l2: any) {
-    const dL = l1.L - l2.L,
-        da = l1.a - l2.a,
-        db = l1.b - l2.b;
-    return Math.sqrt(dL * dL + da * da + db * db);
+  const dL = l1.L - l2.L,
+    da = l1.a - l2.a,
+    db = l1.b - l2.b
+  return Math.sqrt(dL * dL + da * da + db * db)
 }
 
 function rgbToHsl([r, g, b]: [number, number, number]): [number, number, number] {
-    const r1 = r / 255;
-    const g1 = g / 255;
-    const b1 = b / 255;
-    const max = Math.max(r1, g1, b1);
-    const min = Math.min(r1, g1, b1);
-    const l = (max + min) / 2;
-    const d = max - min;
+  const r1 = r / 255
+  const g1 = g / 255
+  const b1 = b / 255
+  const max = Math.max(r1, g1, b1)
+  const min = Math.min(r1, g1, b1)
+  const l = (max + min) / 2
+  const d = max - min
 
-    if (d === 0) {
-        return [0, 0, l];
-    }
+  if (d === 0) {
+    return [0, 0, l]
+  }
 
-    const s = d / (1 - Math.abs(2 * l - 1));
-    let h = 0;
+  const s = d / (1 - Math.abs(2 * l - 1))
+  let h = 0
 
-    switch (max) {
-        case r1:
-            h = ((g1 - b1) / d + (g1 < b1 ? 6 : 0)) / 6;
-            break;
-        case g1:
-            h = ((b1 - r1) / d + 2) / 6;
-            break;
-        default:
-            h = ((r1 - g1) / d + 4) / 6;
-            break;
-    }
+  switch (max) {
+    case r1:
+      h = ((g1 - b1) / d + (g1 < b1 ? 6 : 0)) / 6
+      break
+    case g1:
+      h = ((b1 - r1) / d + 2) / 6
+      break
+    default:
+      h = ((r1 - g1) / d + 4) / 6
+      break
+  }
 
-    return [h, s, l];
+  return [h, s, l]
 }
 
 function circularHueDistance(h1: number, h2: number): number {
-    const diff = Math.abs(h1 - h2);
-    return Math.min(diff, 1 - diff);
+  const diff = Math.abs(h1 - h2)
+  return Math.min(diff, 1 - diff)
 }
 
 function clamp(value: number, min: number, max: number): number {
-    return Math.max(min, Math.min(max, value));
+  return Math.max(min, Math.min(max, value))
 }
 
 type PaletteCandidate = {
-    rgb: [number, number, number];
-    lab: { L: number; a: number; b: number };
-    hsl: [number, number, number];
-    hsv: [number, number, number];
-    prominence: number;
-    chroma: number;
-};
+  rgb: [number, number, number]
+  lab: { L: number; a: number; b: number }
+  hsl: [number, number, number]
+  hsv: [number, number, number]
+  prominence: number
+  chroma: number
+}
 
 function makePaletteCandidate(rgb: [number, number, number], prominence: number): PaletteCandidate {
-    const lab = rgbToLab(rgb);
-    return {
-        rgb,
-        lab,
-        hsl: rgbToHsl(rgb),
-        hsv: rgbToHsv(rgb),
-        prominence,
-        chroma: Math.sqrt(lab.a * lab.a + lab.b * lab.b),
-    };
+  const lab = rgbToLab(rgb)
+  return {
+    rgb,
+    lab,
+    hsl: rgbToHsl(rgb),
+    hsv: rgbToHsv(rgb),
+    prominence,
+    chroma: Math.sqrt(lab.a * lab.a + lab.b * lab.b),
+  }
 }
 
 function dedupePalette(colors: [number, number, number][]): [number, number, number][] {
-    const deduped: [number, number, number][] = [];
-    for (const color of colors) {
-        const lab = rgbToLab(color);
-        const isDuplicate = deduped.some((existing) => deltaE(lab, rgbToLab(existing)) < 8);
-        if (!isDuplicate) {
-            deduped.push(color);
-        }
+  const deduped: [number, number, number][] = []
+  for (const color of colors) {
+    const lab = rgbToLab(color)
+    const isDuplicate = deduped.some((existing) => deltaE(lab, rgbToLab(existing)) < 8)
+    if (!isDuplicate) {
+      deduped.push(color)
     }
-    return deduped;
+  }
+  return deduped
 }
 
 function pickAnchorColor(colors: [number, number, number][]): PaletteCandidate {
-    const prepared = dedupePalette(colors).map((rgb, index, arr) =>
-        makePaletteCandidate(rgb, arr.length <= 1 ? 1 : 1 - index / arr.length)
-    );
+  const prepared = dedupePalette(colors).map((rgb, index, arr) =>
+    makePaletteCandidate(rgb, arr.length <= 1 ? 1 : 1 - index / arr.length)
+  )
 
-    const vivid = prepared.filter((candidate) => {
-        const [, s, l] = candidate.hsl;
-        return candidate.chroma >= 18 && s >= 0.12 && l >= 0.06 && l <= 0.82;
-    });
+  const vivid = prepared.filter((candidate) => {
+    const [, s, l] = candidate.hsl
+    return candidate.chroma >= 18 && s >= 0.12 && l >= 0.06 && l <= 0.82
+  })
 
-    const usable = vivid.length ? vivid : prepared;
+  const usable = vivid.length ? vivid : prepared
 
-    const weightedHueX = usable.reduce(
-        (sum, candidate) => sum + Math.cos(candidate.hsl[0] * Math.PI * 2) * candidate.prominence,
-        0
-    );
-    const weightedHueY = usable.reduce(
-        (sum, candidate) => sum + Math.sin(candidate.hsl[0] * Math.PI * 2) * candidate.prominence,
-        0
-    );
-    const dominantHue =
-        weightedHueX === 0 && weightedHueY === 0
-            ? usable[0].hsl[0]
-            : (Math.atan2(weightedHueY, weightedHueX) / (Math.PI * 2) + 1) % 1;
+  const weightedHueX = usable.reduce(
+    (sum, candidate) => sum + Math.cos(candidate.hsl[0] * Math.PI * 2) * candidate.prominence,
+    0
+  )
+  const weightedHueY = usable.reduce(
+    (sum, candidate) => sum + Math.sin(candidate.hsl[0] * Math.PI * 2) * candidate.prominence,
+    0
+  )
+  const dominantHue =
+    weightedHueX === 0 && weightedHueY === 0
+      ? usable[0].hsl[0]
+      : (Math.atan2(weightedHueY, weightedHueX) / (Math.PI * 2) + 1) % 1
 
-    const scored = usable.map((candidate) => {
-        const [, saturation, lightness] = candidate.hsl;
-        const [, , value] = candidate.hsv;
-        const normalizedDepth = 1 - clamp(lightness, 0, 1);
-        const darknessPreference = 1 - Math.abs(lightness - 0.28) / 0.28;
-        const hueCloseness = 1 - circularHueDistance(candidate.hsl[0], dominantHue) / 0.5;
-        const neutralPenalty = candidate.chroma < 24 ? (24 - candidate.chroma) / 24 : 0;
-        const washedPenalty = lightness > 0.72 ? (lightness - 0.72) / 0.28 : 0;
-        const crushedPenalty = value < 0.16 ? (0.16 - value) / 0.16 : 0;
+  const scored = usable.map((candidate) => {
+    const [, saturation, lightness] = candidate.hsl
+    const [, , value] = candidate.hsv
+    const normalizedDepth = 1 - clamp(lightness, 0, 1)
+    const darknessPreference = 1 - Math.abs(lightness - 0.28) / 0.28
+    const hueCloseness = 1 - circularHueDistance(candidate.hsl[0], dominantHue) / 0.5
+    const neutralPenalty = candidate.chroma < 24 ? (24 - candidate.chroma) / 24 : 0
+    const washedPenalty = lightness > 0.72 ? (lightness - 0.72) / 0.28 : 0
+    const crushedPenalty = value < 0.16 ? (0.16 - value) / 0.16 : 0
 
-        const score =
-            candidate.prominence * 0.34 +
-            saturation * 0.24 +
-            clamp(candidate.chroma / 90, 0, 1) * 0.2 +
-            clamp(darknessPreference, 0, 1) * 0.14 +
-            clamp(normalizedDepth, 0, 1) * 0.08 +
-            clamp(hueCloseness, 0, 1) * 0.1 -
-            neutralPenalty * 0.18 -
-            washedPenalty * 0.12 -
-            crushedPenalty * 0.08;
+    const score =
+      candidate.prominence * 0.34 +
+      saturation * 0.24 +
+      clamp(candidate.chroma / 90, 0, 1) * 0.2 +
+      clamp(darknessPreference, 0, 1) * 0.14 +
+      clamp(normalizedDepth, 0, 1) * 0.08 +
+      clamp(hueCloseness, 0, 1) * 0.1 -
+      neutralPenalty * 0.18 -
+      washedPenalty * 0.12 -
+      crushedPenalty * 0.08
 
-        return { candidate, score };
-    });
+    return { candidate, score }
+  })
 
-    scored.sort((a, b) => b.score - a.score);
-    return scored[0].candidate;
+  scored.sort((a, b) => b.score - a.score)
+  return scored[0].candidate
 }
 
 export async function getAccentColorFromUrl(
-    imageUrl: string,
-    targetLightness = 0,
-    opts?: { paletteSize?: number; colorWeight?: number; lightnessWeight?: number }
+  imageUrl: string,
+  targetLightness = 0,
+  opts?: { paletteSize?: number; colorWeight?: number; lightnessWeight?: number }
 ): Promise<string> {
-    if (!imageUrl) {
-        return '#303030';
+  if (!imageUrl) {
+    return '#303030'
+  }
+
+  try {
+    const paletteSize = opts?.paletteSize ?? 6
+    const res = await fetch(imageUrl)
+    const buffer = Buffer.from(await res.arrayBuffer())
+
+    // @ts-ignore
+    let raw: any = await ColorThief.getPalette(buffer, paletteSize).catch(async () => {
+      // @ts-ignore
+      const single = await ColorThief.getColor(buffer).catch(() => null)
+      return single ? single : null
+    })
+
+    if (!raw) {
+      raw = []
     }
 
-    try {
-        const paletteSize = opts?.paletteSize ?? 6;
-        const res = await fetch(imageUrl);
-        const buffer = Buffer.from(await res.arrayBuffer());
+    const paletteRgb: [number, number, number][] = []
 
-        // @ts-ignore
-        let raw: any = await ColorThief.getPalette(buffer, paletteSize).catch(async () => {
-            // @ts-ignore
-            const single = await ColorThief.getColor(buffer).catch(() => null);
-            return single ? single : null;
-        });
-
-        if (!raw) {
-            raw = [];
+    if (Array.isArray(raw)) {
+      if (raw.length >= 3 && raw.slice(0, 3).every((v: any) => typeof v === 'number')) {
+        paletteRgb.push([raw[0], raw[1], raw[2]])
+      } else {
+        for (const entry of raw) {
+          if (
+            Array.isArray(entry) &&
+            entry.length >= 3 &&
+            typeof entry[0] === 'number' &&
+            typeof entry[1] === 'number' &&
+            typeof entry[2] === 'number'
+          ) {
+            paletteRgb.push([entry[0], entry[1], entry[2]])
+          } else if (
+            entry &&
+            typeof entry === 'object' &&
+            typeof entry.r === 'number' &&
+            typeof entry.g === 'number' &&
+            typeof entry.b === 'number'
+          ) {
+            paletteRgb.push([entry.r, entry.g, entry.b])
+          }
         }
-
-        const paletteRgb: [number, number, number][] = [];
-
-        if (Array.isArray(raw)) {
-            if (raw.length >= 3 && raw.slice(0, 3).every((v: any) => typeof v === 'number')) {
-                paletteRgb.push([raw[0], raw[1], raw[2]]);
-            } else {
-                for (const entry of raw) {
-                    if (
-                        Array.isArray(entry) &&
-                        entry.length >= 3 &&
-                        typeof entry[0] === 'number' &&
-                        typeof entry[1] === 'number' &&
-                        typeof entry[2] === 'number'
-                    ) {
-                        paletteRgb.push([entry[0], entry[1], entry[2]]);
-                    } else if (
-                        entry &&
-                        typeof entry === 'object' &&
-                        typeof entry.r === 'number' &&
-                        typeof entry.g === 'number' &&
-                        typeof entry.b === 'number'
-                    ) {
-                        paletteRgb.push([entry.r, entry.g, entry.b]);
-                    }
-                }
-            }
-        } else if (
-            raw &&
-            typeof raw === 'object' &&
-            typeof raw.r === 'number' &&
-            typeof raw.g === 'number' &&
-            typeof raw.b === 'number'
-        ) {
-            paletteRgb.push([raw.r, raw.g, raw.b]);
-        }
-
-        if (!paletteRgb.length) {
-            // @ts-ignore
-            const single = await ColorThief.getColor(buffer).catch(() => null);
-            if (
-                single &&
-                Array.isArray(single) &&
-                single.length >= 3 &&
-                single.slice(0, 3).every((v: any) => typeof v === 'number')
-            ) {
-                paletteRgb.push([single[0], single[1], single[2]]);
-            } else {
-                paletteRgb.push([48, 48, 48]);
-            }
-        }
-
-        const anchor = pickAnchorColor(paletteRgb);
-        const candidates = COLORS.map((hex) => {
-            const rgb = hexToRgb(hex);
-            const lab = rgbToLab(rgb);
-            const hsl = rgbToHsl(rgb);
-            const chroma = Math.sqrt(lab.a * lab.a + lab.b * lab.b);
-            return { hex, lab, hsl, chroma, Lnorm: lab.L / 100 };
-        });
-
-        const anchorLightness = clamp(anchor.hsl[2], 0, 1);
-        const effectiveTargetLightness =
-            targetLightness > 0 ? anchorLightness * 0.7 + targetLightness * 0.3 : anchorLightness;
-        const colorWeight = opts?.colorWeight ?? 0.52;
-        const lightnessWeight = opts?.lightnessWeight ?? 0.28;
-
-        const scored = candidates.map((cand) => {
-            const de = deltaE(cand.lab, anchor.lab);
-            const colorDistNorm = Math.min(1, de / 100);
-            const hueDiff = circularHueDistance(cand.hsl[0], anchor.hsl[0]);
-            const huePenalty = hueDiff / 0.5;
-            const lightDiff = Math.abs(cand.hsl[2] - effectiveTargetLightness);
-            const chromaDiff = Math.abs(cand.chroma - anchor.chroma) / 100;
-            const tooBrightPenalty =
-                cand.hsl[2] > anchor.hsl[2] + 0.12 ? cand.hsl[2] - (anchor.hsl[2] + 0.12) : 0;
-            const tooMutedPenalty =
-                cand.chroma + 10 < anchor.chroma ? (anchor.chroma - (cand.chroma + 10)) / 100 : 0;
-
-            const score =
-                colorWeight * colorDistNorm +
-                0.32 * huePenalty +
-                lightnessWeight * lightDiff +
-                0.18 * chromaDiff +
-                0.35 * tooBrightPenalty +
-                0.22 * tooMutedPenalty;
-
-            return { hex: cand.hex, score };
-        });
-
-        scored.sort((a, b) => a.score - b.score);
-        return scored[0].hex;
-    } catch (err) {
-        console.error('getAccentColorFromUrl error', err);
-        return '#303030';
+      }
+    } else if (
+      raw &&
+      typeof raw === 'object' &&
+      typeof raw.r === 'number' &&
+      typeof raw.g === 'number' &&
+      typeof raw.b === 'number'
+    ) {
+      paletteRgb.push([raw.r, raw.g, raw.b])
     }
+
+    if (!paletteRgb.length) {
+      // @ts-ignore
+      const single = await ColorThief.getColor(buffer).catch(() => null)
+      if (
+        single &&
+        Array.isArray(single) &&
+        single.length >= 3 &&
+        single.slice(0, 3).every((v: any) => typeof v === 'number')
+      ) {
+        paletteRgb.push([single[0], single[1], single[2]])
+      } else {
+        paletteRgb.push([48, 48, 48])
+      }
+    }
+
+    const anchor = pickAnchorColor(paletteRgb)
+    const candidates = COLORS.map((hex) => {
+      const rgb = hexToRgb(hex)
+      const lab = rgbToLab(rgb)
+      const hsl = rgbToHsl(rgb)
+      const chroma = Math.sqrt(lab.a * lab.a + lab.b * lab.b)
+      return { hex, lab, hsl, chroma, Lnorm: lab.L / 100 }
+    })
+
+    const anchorLightness = clamp(anchor.hsl[2], 0, 1)
+    const effectiveTargetLightness =
+      targetLightness > 0 ? anchorLightness * 0.7 + targetLightness * 0.3 : anchorLightness
+    const colorWeight = opts?.colorWeight ?? 0.52
+    const lightnessWeight = opts?.lightnessWeight ?? 0.28
+
+    const scored = candidates.map((cand) => {
+      const de = deltaE(cand.lab, anchor.lab)
+      const colorDistNorm = Math.min(1, de / 100)
+      const hueDiff = circularHueDistance(cand.hsl[0], anchor.hsl[0])
+      const huePenalty = hueDiff / 0.5
+      const lightDiff = Math.abs(cand.hsl[2] - effectiveTargetLightness)
+      const chromaDiff = Math.abs(cand.chroma - anchor.chroma) / 100
+      const tooBrightPenalty =
+        cand.hsl[2] > anchor.hsl[2] + 0.12 ? cand.hsl[2] - (anchor.hsl[2] + 0.12) : 0
+      const tooMutedPenalty =
+        cand.chroma + 10 < anchor.chroma ? (anchor.chroma - (cand.chroma + 10)) / 100 : 0
+
+      const score =
+        colorWeight * colorDistNorm +
+        0.32 * huePenalty +
+        lightnessWeight * lightDiff +
+        0.18 * chromaDiff +
+        0.35 * tooBrightPenalty +
+        0.22 * tooMutedPenalty
+
+      return { hex: cand.hex, score }
+    })
+
+    scored.sort((a, b) => a.score - b.score)
+    return scored[0].hex
+  } catch (err) {
+    console.error('getAccentColorFromUrl error', err)
+    return '#303030'
+  }
 }
 function rgbToHex([r, g, b]: [number, number, number]): string {
-    const toHex = (n: number) =>
-        Math.max(0, Math.min(255, Math.round(n)))
-            .toString(16)
-            .padStart(2, '0');
-    return `${toHex(r)}${toHex(g)}${toHex(b)}`;
+  const toHex = (n: number) =>
+    Math.max(0, Math.min(255, Math.round(n)))
+      .toString(16)
+      .padStart(2, '0')
+  return `${toHex(r)}${toHex(g)}${toHex(b)}`
 }
 
 function rgbToHsv([r, g, b]: [number, number, number]): [number, number, number] {
-    const r1 = r / 255,
-        g1 = g / 255,
-        b1 = b / 255;
-    const max = Math.max(r1, g1, b1),
-        min = Math.min(r1, g1, b1);
-    const d = max - min;
-    const v = max;
-    const s = max === 0 ? 0 : d / max;
-    let h = 0;
-    if (d !== 0) {
-        switch (max) {
-            case r1:
-                h = (g1 - b1) / d + (g1 < b1 ? 6 : 0);
-                break;
-            case g1:
-                h = (b1 - r1) / d + 2;
-                break;
-            default:
-                h = (r1 - g1) / d + 4;
-        }
-        h /= 6;
+  const r1 = r / 255,
+    g1 = g / 255,
+    b1 = b / 255
+  const max = Math.max(r1, g1, b1),
+    min = Math.min(r1, g1, b1)
+  const d = max - min
+  const v = max
+  const s = max === 0 ? 0 : d / max
+  let h = 0
+  if (d !== 0) {
+    switch (max) {
+      case r1:
+        h = (g1 - b1) / d + (g1 < b1 ? 6 : 0)
+        break
+      case g1:
+        h = (b1 - r1) / d + 2
+        break
+      default:
+        h = (r1 - g1) / d + 4
     }
-    return [h, s, v];
+    h /= 6
+  }
+  return [h, s, v]
 }
 
 function hsvToRgb([h, s, v]: [number, number, number]): [number, number, number] {
-    const i = Math.floor(h * 6);
-    const f = h * 6 - i;
-    const p = v * (1 - s);
-    const q = v * (1 - s * f);
-    const t = v * (1 - s * (1 - f));
-    let r = 0,
-        g = 0,
-        b = 0;
-    switch (i % 6) {
-        case 0:
-            r = v;
-            g = t;
-            b = p;
-            break;
-        case 1:
-            r = q;
-            g = v;
-            b = p;
-            break;
-        case 2:
-            r = p;
-            g = v;
-            b = t;
-            break;
-        case 3:
-            r = p;
-            g = q;
-            b = v;
-            break;
-        case 4:
-            r = t;
-            g = p;
-            b = v;
-            break;
-        case 5:
-            r = v;
-            g = p;
-            b = q;
-            break;
-    }
-    return [r * 255, g * 255, b * 255].map((x) => Math.round(x)) as [number, number, number];
+  const i = Math.floor(h * 6)
+  const f = h * 6 - i
+  const p = v * (1 - s)
+  const q = v * (1 - s * f)
+  const t = v * (1 - s * (1 - f))
+  let r = 0,
+    g = 0,
+    b = 0
+  switch (i % 6) {
+    case 0:
+      r = v
+      g = t
+      b = p
+      break
+    case 1:
+      r = q
+      g = v
+      b = p
+      break
+    case 2:
+      r = p
+      g = v
+      b = t
+      break
+    case 3:
+      r = p
+      g = q
+      b = v
+      break
+    case 4:
+      r = t
+      g = p
+      b = v
+      break
+    case 5:
+      r = v
+      g = p
+      b = q
+      break
+  }
+  return [r * 255, g * 255, b * 255].map((x) => Math.round(x)) as [number, number, number]
 }
 
 function clamp01(x: number): number {
-    return Math.max(0, Math.min(1, x));
+  return Math.max(0, Math.min(1, x))
 }
 
 export function generateTextColor(hexCover: string, hShiftDeg = 12, coeff = 0.81): string {
-    const rgbCover = hexToRgb(hexCover);
-    const [h, s, v] = rgbToHsv(rgbCover);
-    const newH = (h + hShiftDeg / 360) % 1;
-    const liftedS = Math.max(s * 0.7, 0.28);
-    const newS = clamp01(liftedS * coeff);
-    const newV = v < 0.38 ? 1 : 0.96;
-    const rgbText = hsvToRgb([newH, newS, newV]);
-    return rgbToHex(rgbText);
+  const rgbCover = hexToRgb(hexCover)
+  const [h, s, v] = rgbToHsv(rgbCover)
+  const newH = (h + hShiftDeg / 360) % 1
+  const liftedS = Math.max(s * 0.7, 0.28)
+  const newS = clamp01(liftedS * coeff)
+  const newV = v < 0.38 ? 1 : 0.96
+  const rgbText = hsvToRgb([newH, newS, newV])
+  return rgbToHex(rgbText)
 }

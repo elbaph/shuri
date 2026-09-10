@@ -1,24 +1,24 @@
 export interface SpotifyGetCurrentlyPlayingResponse {
-    progress_ms: number;
-    item: Item;
+  progress_ms: number
+  item: Item
 }
 
 interface Item {
-    album: Album;
-    artists: Artist[];
-    name: string;
-    duration_ms: number;
+  album: Album
+  artists: Artist[]
+  name: string
+  duration_ms: number
 }
 
 interface Artist {
-    name: string;
+  name: string
 }
 
 interface Album {
-    name: string;
-    images: Image[];
+  name: string
+  images: Image[]
 }
 
 interface Image {
-    url: string;
+  url: string
 }

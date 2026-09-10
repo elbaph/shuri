@@ -1,141 +1,142 @@
 {
-    "name": "shuri",
-    "displayName": "Shuri: Code & Soul",
-    "description": "🎧 See synchronized Spotify lyrics inside VS Code while coding",
-    "publisher": "o-p",
-    "version": "1.1.2",
-    "engines": {
-        "vscode": "^1.66.0"
-    },
-    "icon": "assets/logo.jpeg",
-    "categories": [
-        "Other"
-    ],
-    "activationEvents": [
-        "onCommand:shuri.lyrics",
-        "onCommand:shuri.logout",
-        "onCommand:shuri.tracksCacheMaxSize",
-        "onCommand:shuri.port",
-        "onCommand:shuri.mobileMode",
-        "onCommand:shuri.songTitle",
-        "onCommand:shuri.songIcon",
-        "onCommand:shuri.songArtists"
-    ],
-    "main": "./out/extension.js",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/elbaph/shuri.git"
-    },
-    "contributes": {
-        "configuration": {
-            "title": "Shuri",
-            "properties": {
-                "shuri.port": {
-                    "type": "number",
-                    "default": 5566,
-                    "minimum": 1024,
-                    "maximum": 65535,
-                    "description": "Port used for the Spotify OAuth callback."
-                },
-                "shuri.tracksCacheMaxSize": {
-                    "type": "number",
-                    "default": 10,
-                    "minimum": 1,
-                    "maximum": 9007199254740991,
-                    "description": "Maximum cache size for tracks."
-                },
-                "shuri.mobileMode": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Mobile mode: black unplayed lines, white played lines."
-                },
-                "shuri.songTitle": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Toggle the song title in the lyrics panel."
-                },
-                "shuri.songIcon": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Toggle the song icon in the lyrics panel."
-                },
-                "shuri.songArtists": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Toggle the song artists in the lyrics panel."
-                }
-            }
+  "name": "shuri",
+  "displayName": "Shuri: Code & Soul",
+  "description": "🎧 See synchronized Spotify lyrics inside VS Code while coding",
+  "publisher": "o-p",
+  "version": "1.1.2",
+  "engines": {
+    "vscode": "^1.66.0"
+  },
+  "icon": "assets/logo.jpeg",
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:shuri.lyrics",
+    "onCommand:shuri.logout",
+    "onCommand:shuri.tracksCacheMaxSize",
+    "onCommand:shuri.port",
+    "onCommand:shuri.mobileMode",
+    "onCommand:shuri.songTitle",
+    "onCommand:shuri.songIcon",
+    "onCommand:shuri.songArtists"
+  ],
+  "main": "./out/extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elbaph/shuri.git"
+  },
+  "contributes": {
+    "configuration": {
+      "title": "Shuri",
+      "properties": {
+        "shuri.port": {
+          "type": "number",
+          "default": 5566,
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "Port used for the Spotify OAuth callback."
         },
-        "commands": [
-            {
-                "command": "shuri.lyrics",
-                "title": "Show Spotify Lyrics via Shuri"
-            },
-            {
-                "command": "shuri.logout",
-                "title": "Logout from Shuri"
-            },
-            {
-                "command": "shuri.tracksCacheMaxSize",
-                "title": "Set Tracks Cache Max Size"
-            },
-            {
-                "command": "shuri.mobileMode",
-                "title": "Toggle Mobile Mode"
-            },
-            {
-                "command": "shuri.port",
-                "title": "Set Spotify OAuth Callback Port"
-            },
-            {
-                "command": "shuri.songTitle",
-                "title": "Toggle Song Title"
-            },
-            {
-                "command": "shuri.songIcon",
-                "title": "Toggle Song Icon"
-            },
-            {
-                "command": "shuri.songArtists",
-                "title": "Toggle Song Artists"
-            }
-        ]
+        "shuri.tracksCacheMaxSize": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 9007199254740991,
+          "description": "Maximum cache size for tracks."
+        },
+        "shuri.mobileMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Mobile mode: black unplayed lines, white played lines."
+        },
+        "shuri.songTitle": {
+          "type": "boolean",
+          "default": true,
+          "description": "Toggle the song title in the lyrics panel."
+        },
+        "shuri.songIcon": {
+          "type": "boolean",
+          "default": true,
+          "description": "Toggle the song icon in the lyrics panel."
+        },
+        "shuri.songArtists": {
+          "type": "boolean",
+          "default": true,
+          "description": "Toggle the song artists in the lyrics panel."
+        }
+      }
     },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./",
-        "pretest": "npm run compile && npm run lint",
-        "lint": "eslint .",
-        "lint:fix": "eslint . --fix",
-        "format": "prettier --write .",
-        "format:check": "prettier --check 'src/**/*.{ts,js}'",
-        "test": "vscode-test",
-        "package": "vsce package -o shuri-dev.vsix"
-    },
-    "devDependencies": {
-        "@types/colorthief": "^2.6.0",
-        "@types/mocha": "^10.0.10",
-        "@types/node": "20.x",
-        "@types/node-fetch": "^2.6.13",
-        "@types/vscode": "^1.66.0",
-        "@typescript-eslint/eslint-plugin": "^8.41.0",
-        "@typescript-eslint/parser": "^8.41.0",
-        "@vscode/test-cli": "^0.0.11",
-        "@vscode/test-electron": "^2.5.2",
-        "@vscode/vsce": "^3.9.2",
-        "eslint": "^9.34.0",
-        "eslint-config-prettier": "^10.1.8",
-        "eslint-plugin-prettier": "^5.5.4",
-        "prettier": "^3.6.2",
-        "typescript": "^5.8.3"
-    },
-    "dependencies": {
-        "colorthief": "^2.6.0",
-        "lru-cache": "^7.18.3",
-        "node-fetch": "^2.7.0",
-        "ts-treemap": "^1.1.0",
-        "tslib": "^2.8.1"
-    },
-    "license": "Unlicense"
+    "commands": [
+      {
+        "command": "shuri.lyrics",
+        "title": "Show Spotify Lyrics via Shuri"
+      },
+      {
+        "command": "shuri.logout",
+        "title": "Logout from Shuri"
+      },
+      {
+        "command": "shuri.tracksCacheMaxSize",
+        "title": "Set Tracks Cache Max Size"
+      },
+      {
+        "command": "shuri.mobileMode",
+        "title": "Toggle Mobile Mode"
+      },
+      {
+        "command": "shuri.port",
+        "title": "Set Spotify OAuth Callback Port"
+      },
+      {
+        "command": "shuri.songTitle",
+        "title": "Toggle Song Title"
+      },
+      {
+        "command": "shuri.songIcon",
+        "title": "Toggle Song Icon"
+      },
+      {
+        "command": "shuri.songArtists",
+        "title": "Toggle Song Artists"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check 'src/**/*.{ts,js}'",
+    "test": "vscode-test",
+    "package": "vsce package -o shuri-dev.vsix"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "@types/colorthief": "^2.6.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/node-fetch": "^2.6.13",
+    "@types/vscode": "^1.66.0",
+    "@typescript-eslint/eslint-plugin": "^8.41.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.9.2",
+    "eslint": "^9.34.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.9.6",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "colorthief": "^2.6.0",
+    "lru-cache": "^7.18.3",
+    "node-fetch": "^2.7.0",
+    "ts-treemap": "^1.1.0",
+    "tslib": "^2.8.1"
+  },
+  "license": "Unlicense"
 }
