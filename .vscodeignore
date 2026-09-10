@@ -1,3 +1,11 @@
 .vscode/
 .idea/
 *.iml
+
+.github/
+.claude/
+src/**
+out/**/*.map
+tsconfig.json
+eslint.config.mjs
+.prettierrc
