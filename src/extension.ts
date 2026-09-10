@@ -14,7 +14,7 @@ import { LyricsEntry } from './LyricsEntry'
 import { SpotifyAuthState } from './SpotifyAuthState'
 import { SpotifyCurrentPlayingState } from './SpotifyCurrentPlayingState'
 import { SpotifyPreAuthState } from './SpotifyPreAuthState'
-import { SpotifyWebApi } from './api/SpotifyWebApi'
+import { SpotifyAuthError, SpotifyWebApi } from './api/SpotifyWebApi'
 import { LRCLibLyricsProvider } from './provider/LRCLibLyricsProvider'
 import { LyricsProvider } from './provider/LyricsProvider'
 
@@ -27,6 +27,7 @@ let tracksCache: LRUCache<string, SpotifyCurrentPlayingState>
 
 let server: http.Server | null
 let pollingTimeout: NodeJS.Timeout | null
+let pollingActive = false
 
 const provider: LyricsProvider = new LRCLibLyricsProvider()
 
@@ -115,17 +116,7 @@ export async function activate(context: vscode.ExtensionContext) {
   )
   context.subscriptions.push(
     vscode.commands.registerCommand('shuri.logout', async () => {
-      context.secrets.delete('clientId')
-      context.secrets.delete('accessToken')
-      context.secrets.delete('refreshToken')
-      context.secrets.delete('expiresIn')
-      await deactivate()
-      if (panel) {
-        await createServer(context)
-        await printFrame(context)
-        panel.title = 'Spotify Lyrics'
-        panel.iconPath = vscode.Uri.file(path.join(context.extensionPath, 'assets/icon.png'))
-      }
+      await resetAuth(context)
     })
   )
   context.subscriptions.push(
@@ -255,6 +246,7 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export async function deactivate() {
+  pollingActive = false
   if (pollingTimeout) {
     clearTimeout(pollingTimeout)
     pollingTimeout = null
@@ -266,6 +258,20 @@ export async function deactivate() {
   authState = null
   preAuthState = null
   currentPlayingState = undefined
+}
+
+async function resetAuth(context: vscode.ExtensionContext) {
+  context.secrets.delete('clientId')
+  context.secrets.delete('accessToken')
+  context.secrets.delete('refreshToken')
+  context.secrets.delete('expiresIn')
+  await deactivate()
+  if (panel) {
+    await createServer(context)
+    await printFrame(context)
+    panel.title = 'Spotify Lyrics'
+    panel.iconPath = vscode.Uri.file(path.join(context.extensionPath, 'assets/icon.png'))
+  }
 }
 
 async function printFrame(context: vscode.ExtensionContext) {
@@ -317,51 +323,50 @@ async function createServer(context: vscode.ExtensionContext) {
       const code = parsedUrl.searchParams.get('code')
 
       if (code && preAuthState) {
-        const response = await SpotifyWebApi.getToken(
-          preAuthState.clientId,
-          preAuthState.codeVerifier,
-          preAuthState.redirectUri,
-          code,
-          preAuthState.grantType
-        )
+        try {
+          const response = await SpotifyWebApi.getToken(
+            preAuthState.clientId,
+            preAuthState.codeVerifier,
+            preAuthState.redirectUri,
+            code,
+            preAuthState.grantType
+          )
 
-        const expiresIn = Date.now() + response.expires_in * 1000
+          const expiresIn = Date.now() + response.expires_in * 1000
 
-        context.secrets.store('clientId', preAuthState.clientId)
-        context.secrets.store('accessToken', response.access_token)
-        context.secrets.store('refreshToken', response.refresh_token)
-        context.secrets.store('expiresIn', String(expiresIn))
+          context.secrets.store('clientId', preAuthState.clientId)
+          context.secrets.store('accessToken', response.access_token)
+          context.secrets.store('refreshToken', response.refresh_token)
+          context.secrets.store('expiresIn', String(expiresIn))
 
-        authState = new SpotifyAuthState(
-          preAuthState.clientId,
-          response.access_token,
-          response.refresh_token,
-          expiresIn
-        )
-        preAuthState = null
+          authState = new SpotifyAuthState(
+            preAuthState.clientId,
+            response.access_token,
+            response.refresh_token,
+            expiresIn
+          )
+          preAuthState = null
 
-        await printFrame(context)
+          await printFrame(context)
 
-        if (!pollingTimeout) {
-          const loop = async () => {
-            try {
-              await pollSpotifyStat(context)
-            } finally {
-              pollingTimeout = setTimeout(loop, 300)
-            }
+          startPollingLoop(context)
+
+          vscode.window.showInformationMessage(`You have successfully signed in`)
+
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'text/plain')
+          res.end('Authorization code received! You can close this page.')
+
+          if (server) {
+            server.close()
+            server = null
           }
-          loop()
-        }
-
-        vscode.window.showInformationMessage(`You have successfully signed in`)
-
-        res.statusCode = 200
-        res.setHeader('Content-Type', 'text/plain')
-        res.end('Authorization code received! You can close this page.')
-
-        if (server) {
-          server.close()
-          server = null
+        } catch (err) {
+          console.error(`Sign-in failed: ${err}`)
+          vscode.window.showErrorMessage(`Sign-in failed: ${err}`)
+          res.statusCode = 502
+          res.setHeader('Content-Type', 'text/plain')
+          res.end('Sign-in failed. You can close this page and try again.')
         }
       } else {
         res.statusCode = 400
@@ -386,13 +391,16 @@ async function pollSpotifyStat(context: vscode.ExtensionContext) {
           authState.clientId
         )
 
+        // Spotify does not always rotate the refresh token; keep the
+        // old one when no new one comes back instead of clobbering it.
+        const refreshToken = response.refresh_token ?? authState.refreshToken
         const expiresIn = Date.now() + response.expires_in * 1000
 
         context.secrets.store('accessToken', response.access_token)
-        context.secrets.store('refreshToken', response.refresh_token)
+        context.secrets.store('refreshToken', refreshToken)
         context.secrets.store('expiresIn', String(expiresIn))
 
-        authState.refreshToken = response.refresh_token
+        authState.refreshToken = refreshToken
         authState.accessToken = response.access_token
         authState.expiresIn = expiresIn
       }
@@ -400,7 +408,12 @@ async function pollSpotifyStat(context: vscode.ExtensionContext) {
     }
   } catch (err) {
     console.error(`pollSpotifyStat error: ${err}`)
-    vscode.window.showErrorMessage(`pollSpotifyStat error: ${err}`)
+    if (err instanceof SpotifyAuthError) {
+      await resetAuth(context)
+      vscode.window.showWarningMessage('Your Spotify session has expired. Please sign in again.')
+    } else {
+      vscode.window.showErrorMessage(`pollSpotifyStat error: ${err}`)
+    }
   }
 }
 
@@ -655,15 +668,23 @@ async function authorize(context: vscode.ExtensionContext) {
   if (clientId && accessToken && refreshToken && expiresInStr) {
     authState = new SpotifyAuthState(clientId, accessToken, refreshToken, Number(expiresInStr))
 
-    if (!pollingTimeout) {
-      const loop = async () => {
-        try {
-          await pollSpotifyStat(context)
-        } finally {
-          pollingTimeout = setTimeout(loop, 300)
-        }
+    startPollingLoop(context)
+  }
+}
+
+function startPollingLoop(context: vscode.ExtensionContext) {
+  if (pollingActive) {
+    return
+  }
+  pollingActive = true
+  const loop = async () => {
+    try {
+      await pollSpotifyStat(context)
+    } finally {
+      if (pollingActive) {
+        pollingTimeout = setTimeout(loop, 300)
       }
-      loop()
     }
   }
+  loop()
 }

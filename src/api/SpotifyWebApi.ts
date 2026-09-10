@@ -4,6 +4,18 @@ import { SpotifyGetCurrentlyPlayingResponse } from './response/SpotifyGetCurrent
 import { SpotifyGetTokenResponse } from './response/SpotifyGetTokenResponse'
 import { SpotifyRefreshTokenResponse } from './response/SpotifyRefreshTokenResponse'
 
+interface SpotifyTokenErrorBody {
+  error?: string
+  error_description?: string
+}
+
+export class SpotifyAuthError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SpotifyAuthError'
+  }
+}
+
 export class SpotifyWebApi {
   static async getAuthUrl(port: number, clientId: string, codeChallenge: string) {
     const params = new URLSearchParams({
@@ -40,7 +52,13 @@ export class SpotifyWebApi {
       body: params.toString(),
     })
 
-    return (await response.json()) as SpotifyGetTokenResponse
+    const body = (await response.json()) as SpotifyGetTokenResponse & SpotifyTokenErrorBody
+    if (!response.ok) {
+      throw new SpotifyAuthError(
+        body.error_description ?? body.error ?? `Spotify token request failed (${response.status})`
+      )
+    }
+    return body
   }
 
   static async refreshToken(refreshToken: string, clientId: string) {
@@ -57,7 +75,13 @@ export class SpotifyWebApi {
       body: params.toString(),
     })
 
-    return (await response.json()) as SpotifyRefreshTokenResponse
+    const body = (await response.json()) as SpotifyRefreshTokenResponse & SpotifyTokenErrorBody
+    if (!response.ok) {
+      throw new SpotifyAuthError(
+        body.error_description ?? body.error ?? `Spotify token refresh failed (${response.status})`
+      )
+    }
+    return body
   }
 
   static async getCurrentlyPlaying(accessToken: string) {
