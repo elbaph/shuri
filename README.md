@@ -15,17 +15,17 @@
 > [!WARNING]
 > Due to [Spotify API changes in February 2026](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide), **Spotify Premium is now required** to use this extension. Starting from February 11, 2026, Spotify requires Premium for app owners using Development Mode. Sorry for the inconvenience.
 
-## :sparkles: Features
+## ✨ Features
 
-- :pushpin: **Live lyrics sync** with your Spotify playback.
-- :art: Lyrics follow your VS Code color theme.
-- :desktop_computer: Smooth **side panel view** – code on the left, lyrics on the right.
-- :computer_mouse: **Click-to-seek** – click on any lyric line to jump to that moment in the track (like Spotify app).
-- :key: Simple **one-time login** using your own Spotify Client ID.
-- :door: Quick logout command to reset session.
-- :zap: Set a **maximum tracks cache size** for lyrics syncing.
+- 📌 **Live lyrics sync** with your Spotify playback.
+- 🎨 Lyrics follow your VS Code color theme.
+- 🖥️ Smooth **side panel view** – code on the left, lyrics on the right.
+- 🖱️ **Click-to-seek** – click on any lyric line to jump to that moment in the track (like Spotify app).
+- 🔑 Simple **one-time login** using your own Spotify Client ID.
+- 🚪 Quick logout command to reset session.
+- ⚡ Set a **maximum tracks cache size** for lyrics syncing.
 
-## :zap: Installation
+## ⚡ Installation
 
 1. Open **VS Code** → Extensions → search `Shuri` or [install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=o-p.shuri) or from [Open VSX Registry](https://open-vsx.org/extension/o-p/shuri).
 
@@ -35,7 +35,7 @@
 Show Spotify Lyrics via Shuri
 ```
 
-## :key: Authentication (one-time setup)
+## 🔑 Authentication (one-time setup)
 
 1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
 2. Create an app → copy **Client ID**.
@@ -43,11 +43,11 @@ Show Spotify Lyrics via Shuri
    You can change the port in settings (`shuri.port`) or via the command `Set Spotify OAuth Callback Port`.
 4. Run the `Show Spotify Lyrics via Shuri` command.
 5. Paste your **Client ID** in the panel and log in.
-6. Enjoy synced lyrics while coding! :notes:
+6. Enjoy synced lyrics while coding! 🎶
 
-> :information_source: Why? – To respect Spotify API rate limits, you need your own ID.
+> ℹ️ Why? – To respect Spotify API rate limits, you need your own ID.
 
-## :keyboard: Commands
+## ⌨️ Commands
 
 - `Show Spotify Lyrics via Shuri` (`shuri.lyrics`) – open synced lyrics panel.
 - `Logout from Shuri` (`shuri.logout`) – clear session and re-auth when needed.
@@ -57,31 +57,19 @@ Show Spotify Lyrics via Shuri
 - `Toggle Song Icon` (`shuri.songIcon`) – toggle the song icon in the lyrics panel.
 - `Toggle Song Artists` (`shuri.songArtists`) – toggle the song artists in the lyrics panel.
 
-## :gear: Tech stack
+## ⚙️ Tech stack
 
 - [Spotify Web API](https://developer.spotify.com/documentation/web-api/)
 - [LRClib](https://lrclib.net/) for lyrics with timing
 - TypeScript + VS Code WebView
 
-## :hammer_and_wrench: Development
+## 🛠️ Contributing
 
-All day-to-day commands go through `make` — run `make help` any time for the full, up-to-date list.
+See the `Makefile` (`make help`) for the development workflow.
 
-```bash
-make install   # install dependencies (first time only)
-make compile   # type-check + lint + esbuild bundle, once
-make watch     # rebuild on save (used automatically by F5 "Run Extension")
-make lint      # ESLint
-make format    # Prettier, whole repo
-make test      # vscode-test (compiles first)
-make package   # bundle and package into a .vsix
-make dev       # package + install into a local VS Code profile for manual testing
-make clean     # remove build output
-```
-
-For everyday development, press **F5** in VS Code (Run Extension) rather than repackaging — it runs `make watch` under the hood and reloads much faster. `make dev` is for verifying real install behavior (e.g. marketplace update paths, cold-start activation) that only shows up once actually installed.
-
-## :scroll: License
+## 📜 License
 
 This project is licensed as **Unlicensed**.
 Feel free to use, hack, and remix it.
+
+Forked from [therepanic/spotilyrics](https://github.com/therepanic/spotilyrics).

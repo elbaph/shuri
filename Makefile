@@ -1,5 +1,10 @@
 # Dev shortcuts. Run `make help` to list everything.
 # Each target just wraps one existing npm/vsce/code command.
+#
+# For everyday development, press F5 in VS Code (Run Extension) rather than
+# repackaging — it runs `make watch` under the hood and reloads much faster.
+# `make dev` is for verifying real install behavior (e.g. marketplace update
+# paths, cold-start activation) that only shows up once actually installed.
 
 .DEFAULT_GOAL := help
 

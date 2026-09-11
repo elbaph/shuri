@@ -1,9 +1,9 @@
 {
   "name": "shuri",
   "displayName": "Shuri: Code & Soul",
-  "description": "🎧 See synchronized Spotify lyrics inside VS Code while coding",
+  "description": "👁️ View synced Spotify lyrics in the Explorer view",
   "publisher": "o-p",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.123.0"
   },
