@@ -1,8 +1,6 @@
 name: Build VSCode Extension (multi-platform)
 
 on:
-  push:
-    branches: [master]
   pull_request:
   workflow_dispatch: {}
 
