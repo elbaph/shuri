@@ -1,11 +1,13 @@
 out/
 node_modules/
 dist/**/test/
-*.map
-.vscode-test.*
-*.vsix
 
+.DS_Store
+.vscode-test.*
 *.local.*
+*.map
+*.vsix
+Thumbs.db
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
