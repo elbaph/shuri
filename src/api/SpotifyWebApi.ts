@@ -9,11 +9,34 @@ interface SpotifyTokenErrorBody {
   error_description?: string
 }
 
+// api.spotify.com (as opposed to accounts.spotify.com) uses a different,
+// nested error shape: { "error": { "status": 429, "message": "..." } }.
+interface SpotifyApiErrorBody {
+  error?: { status?: number; message?: string }
+}
+
 export class SpotifyAuthError extends Error {
   constructor(message: string) {
     super(message)
     this.name = 'SpotifyAuthError'
   }
+}
+
+export class SpotifyRateLimitError extends Error {
+  retryAfterMs: number
+
+  constructor(message: string, retryAfterMs: number) {
+    super(message)
+    this.name = 'SpotifyRateLimitError'
+    this.retryAfterMs = retryAfterMs
+  }
+}
+
+const DEFAULT_RATE_LIMIT_RETRY_MS = 30_000
+
+function retryAfterMs(response: { headers: { get(name: string): string | null } }): number {
+  const seconds = Number(response.headers.get('retry-after'))
+  return seconds > 0 ? seconds * 1000 : DEFAULT_RATE_LIMIT_RETRY_MS
 }
 
 export class SpotifyWebApi {
@@ -54,9 +77,12 @@ export class SpotifyWebApi {
 
     const body = (await response.json()) as SpotifyGetTokenResponse & SpotifyTokenErrorBody
     if (!response.ok) {
-      throw new SpotifyAuthError(
+      const message =
         body.error_description ?? body.error ?? `Spotify token request failed (${response.status})`
-      )
+      if (response.status === 429) {
+        throw new SpotifyRateLimitError(message, retryAfterMs(response))
+      }
+      throw new SpotifyAuthError(message)
     }
     return body
   }
@@ -77,9 +103,12 @@ export class SpotifyWebApi {
 
     const body = (await response.json()) as SpotifyRefreshTokenResponse & SpotifyTokenErrorBody
     if (!response.ok) {
-      throw new SpotifyAuthError(
+      const message =
         body.error_description ?? body.error ?? `Spotify token refresh failed (${response.status})`
-      )
+      if (response.status === 429) {
+        throw new SpotifyRateLimitError(message, retryAfterMs(response))
+      }
+      throw new SpotifyAuthError(message)
     }
     return body
   }
@@ -97,7 +126,28 @@ export class SpotifyWebApi {
       return null
     }
 
-    return (await response.json()) as SpotifyGetCurrentlyPlayingResponse
+    const body = (await response.json()) as SpotifyGetCurrentlyPlayingResponse & SpotifyApiErrorBody
+
+    if (!response.ok) {
+      const message =
+        body.error?.message ?? `Spotify currently-playing request failed (${response.status})`
+      if (response.status === 401) {
+        throw new SpotifyAuthError(message)
+      }
+      if (response.status === 429) {
+        throw new SpotifyRateLimitError(message, retryAfterMs(response))
+      }
+      throw new Error(message)
+    }
+
+    // Spotify can return 200 with no item — e.g. an ad is playing, or the
+    // session is private. Treat that the same as "nothing is playing"
+    // rather than passing through an object with no .item to read.
+    if (!body.item) {
+      return null
+    }
+
+    return body
   }
 
   static async seekToPosition(accessToken: string, position_ms: number) {

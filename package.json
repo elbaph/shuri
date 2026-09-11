@@ -19,7 +19,8 @@
     "onCommand:shuri.mobileMode",
     "onCommand:shuri.songTitle",
     "onCommand:shuri.songIcon",
-    "onCommand:shuri.songArtists"
+    "onCommand:shuri.songArtists",
+    "onView:shuri.lyricsView"
   ],
   "main": "./out/extension.js",
   "repository": {
@@ -100,6 +101,16 @@
         "title": "Toggle Song Artists"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "id": "shuri.lyricsView",
+          "icon": "assets/icon.png",
+          "name": "Shuri Lyrics",
+          "type": "webview"
+        }
+      ]
+    },
     "problemMatchers": [
       {
         "name": "esbuild-watch",

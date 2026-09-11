@@ -1,0 +1,174 @@
+html,
+body {
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+body {
+  /* background-color: var(--vscode-editor-background); */
+  color: var(--vscode-editor-foreground);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size, 13px);
+  margin: 0;
+  padding: 0;
+}
+
+.placeholder {
+  font-weight: 600;
+  font-size: 0.95em;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+  pointer-events: none;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  width: 100%;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+
+.box {
+  padding: 8px 10px 48px;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.lyrics-note {
+  font-weight: 400;
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 10px;
+}
+
+.line {
+  padding: 2px 6px;
+  margin: 0 -6px 4px -6px;
+  border-radius: 3px;
+  color: var(--vscode-descriptionForeground);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+  cursor: default;
+}
+
+.line.past {
+  color: var(--vscode-descriptionForeground);
+}
+
+.line.current {
+  color: var(--vscode-editor-foreground);
+  background-color: var(--vscode-editor-selectionBackground);
+  font-weight: 600;
+}
+
+.line.future {
+  color: var(--vscode-editor-foreground);
+}
+
+.line.future:hover,
+.line.past:hover {
+  background-color: var(--vscode-list-hoverBackground);
+  color: var(--vscode-editor-foreground);
+  cursor: pointer;
+}
+
+.sync-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 8px auto 0;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 999px;
+  padding: 5px 14px;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  font: inherit;
+  font-size: 0.9em;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.14s ease,
+    transform 0.18s ease;
+  transform: translateY(6px);
+  position: sticky;
+  bottom: 8px;
+  z-index: 10;
+  cursor: pointer;
+}
+
+.sync-button:not([hidden]) {
+  display: inline-flex;
+}
+
+.sync-button.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.sync-button.visible:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.sync-button:focus,
+.sync-button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+.sync-button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 16px;
+  height: 16px;
+}
+
+.sync-button__icon span {
+  width: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.95;
+}
+
+.sync-button__icon span:nth-child(1) {
+  height: 5px;
+}
+
+.sync-button__icon span:nth-child(2) {
+  height: 9px;
+}
+
+.sync-button__icon span:nth-child(3) {
+  height: 14px;
+}
+
+.sync-button__icon span:nth-child(4) {
+  height: 9px;
+}
+
+.sync-button__icon span:nth-child(5) {
+  height: 5px;
+}
+
+.sync-button__label {
+  display: block;
+  min-width: 0;
+  text-align: center;
+  font-size: 1em;
+  line-height: 1;
+}
+
+#sync-error {
+  font-size: 0.8em;
+  color: var(--vscode-gitDecoration-ignoredResourceForeground, var(--vscode-descriptionForeground));
+  padding: 4px 10px;
+}

@@ -4,6 +4,7 @@ export interface SpotifyGetCurrentlyPlayingResponse {
 }
 
 interface Item {
+  id: string
   album: Album
   artists: Artist[]
   name: string

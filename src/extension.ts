@@ -7,18 +7,18 @@ import { clearTimeout } from 'node:timers'
 import LRUCache from 'lru-cache'
 import TreeMap from 'ts-treemap'
 import * as vscode from 'vscode'
-import { WebviewPanel } from 'vscode'
+import { WebviewPanel, WebviewView } from 'vscode'
 
-import { generateTextColor, getAccentColorFromUrl } from './ColorUtil'
 import { LyricsEntry } from './LyricsEntry'
 import { SpotifyAuthState } from './SpotifyAuthState'
 import { SpotifyCurrentPlayingState } from './SpotifyCurrentPlayingState'
 import { SpotifyPreAuthState } from './SpotifyPreAuthState'
-import { SpotifyAuthError, SpotifyWebApi } from './api/SpotifyWebApi'
+import { SpotifyAuthError, SpotifyRateLimitError, SpotifyWebApi } from './api/SpotifyWebApi'
 import { LRCLibLyricsProvider } from './provider/LRCLibLyricsProvider'
 import { LyricsProvider } from './provider/LyricsProvider'
 
 let panel: WebviewPanel | undefined
+let sidebarView: WebviewView | undefined
 
 let preAuthState: SpotifyPreAuthState | null
 let authState: SpotifyAuthState | null
@@ -28,10 +28,79 @@ let tracksCache: LRUCache<string, SpotifyCurrentPlayingState>
 let server: http.Server | null
 let pollingTimeout: NodeJS.Timeout | null
 let pollingActive = false
+let consecutivePollErrors = 0
+let hasVisibleSyncIssue = false
 
 const provider: LyricsProvider = new LRCLibLyricsProvider()
 
+const BASE_POLL_INTERVAL_MS = 300
+const MAX_POLL_INTERVAL_MS = 10_000
+
+function nextPollDelay(): number {
+  if (consecutivePollErrors === 0) {
+    return BASE_POLL_INTERVAL_MS
+  }
+  return Math.min(BASE_POLL_INTERVAL_MS * 2 ** consecutivePollErrors, MAX_POLL_INTERVAL_MS)
+}
+
+class LyricsViewProvider implements vscode.WebviewViewProvider {
+  constructor(private readonly context: vscode.ExtensionContext) {}
+
+  async resolveWebviewView(webviewView: vscode.WebviewView) {
+    sidebarView = webviewView
+    webviewView.title = 'Gunko'
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'media')],
+    }
+    webviewView.webview.onDidReceiveMessage((message) =>
+      handleWebviewMessage(this.context, message)
+    )
+    webviewView.onDidChangeVisibility(async () => {
+      if (webviewView.visible) {
+        await printFrame(this.context)
+        await sendCurrentLyrics()
+        if (authState) {
+          startPollingLoop(this.context)
+        }
+      } else {
+        updateSidebarTitle()
+        if (!isAnySurfaceVisible()) {
+          pausePollingLoop()
+        }
+      }
+    })
+    webviewView.onDidDispose(() => {
+      sidebarView = undefined
+    })
+
+    if (!authState) {
+      await authorize(this.context)
+      if (!authState) {
+        await createServer(this.context)
+      }
+    }
+    await printFrame(this.context)
+  }
+}
+
+function createTracksCache(maxSize?: number): LRUCache<string, SpotifyCurrentPlayingState> {
+  const size =
+    maxSize ?? (Number(vscode.workspace.getConfiguration('shuri').get('tracksCacheMaxSize')) || 10)
+  return new LRUCache({ maxSize: size, sizeCalculation: () => 1 })
+}
+
 export async function activate(context: vscode.ExtensionContext) {
+  // Must exist before any surface (panel or sidebar) can poll for lyrics —
+  // previously this was only created inside the shuri.lyrics command
+  // handler, so sidebar-only usage hit tracksCache.get() on undefined.
+  tracksCache = createTracksCache()
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider('shuri.lyricsView', new LyricsViewProvider(context), {
+      webviewOptions: { retainContextWhenHidden: true },
+    })
+  )
   context.subscriptions.push(
     vscode.commands.registerCommand('shuri.lyrics', async () => {
       if (panel) {
@@ -48,17 +117,6 @@ export async function activate(context: vscode.ExtensionContext) {
           }
         )
         panel.iconPath = vscode.Uri.file(path.join(context.extensionPath, 'assets/icon.png'))
-        const tracksCacheMaxSize: number = Number(
-          vscode.workspace.getConfiguration('shuri').get('tracksCacheMaxSize')
-        )
-        if (tracksCacheMaxSize) {
-          tracksCache = new LRUCache({
-            maxSize: tracksCacheMaxSize,
-            sizeCalculation: () => 1,
-          })
-        } else {
-          tracksCache = new LRUCache({ maxSize: 10, sizeCalculation: () => 1 })
-        }
       }
       await authorize(context)
       if (!authState) {
@@ -66,51 +124,23 @@ export async function activate(context: vscode.ExtensionContext) {
       }
       await printFrame(context)
 
-      panel.webview.onDidReceiveMessage(async (message) => {
-        if (message.command === 'seekToPosition') {
-          const timeMs = message.timeMs
-          if (authState) {
-            await SpotifyWebApi.seekToPosition(authState.accessToken, timeMs)
-          }
-        } else if (message.command === 'signInClicked') {
-          const clientId = message.message
-
-          const codeVerifier = generateCodeVerifier()
-          const sha256 = crypto.createHash('sha256').update(codeVerifier).digest()
-          const codeChallenge = sha256
-            .toString('base64')
-            .replace(/\+/g, '-')
-            .replace(/\//g, '_')
-            .replace(/=+$/, '')
-
-          preAuthState = new SpotifyPreAuthState(
-            clientId,
-            codeVerifier,
-            codeChallenge,
-            'authorization_code',
-            `http://127.0.0.1:${vscode.workspace.getConfiguration('shuri').get('port')}/callback`
-          )
-
-          vscode.env.openExternal(
-            vscode.Uri.parse(
-              await SpotifyWebApi.getAuthUrl(
-                vscode.workspace.getConfiguration('shuri').get('port')!,
-                clientId,
-                codeChallenge
-              )
-            )
-          )
-        }
-      })
+      panel.webview.onDidReceiveMessage((message) => handleWebviewMessage(context, message))
       panel.onDidChangeViewState(async (e) => {
-        if (e.webviewPanel.visible && authState) {
-          await printFrame(context)
-          await sendCurrentLyricsToPanel()
+        if (e.webviewPanel.visible) {
+          if (authState) {
+            await printFrame(context)
+            await sendCurrentLyrics()
+            startPollingLoop(context)
+          }
+        } else if (!isAnySurfaceVisible()) {
+          pausePollingLoop()
         }
       })
-      panel.onDidDispose((e) => {
+      panel.onDidDispose(() => {
         panel = undefined
-        deactivate()
+        if (!isAnySurfaceVisible()) {
+          pausePollingLoop()
+        }
       })
     })
   )
@@ -150,19 +180,7 @@ export async function activate(context: vscode.ExtensionContext) {
         .getConfiguration('shuri')
         .update('tracksCacheMaxSize', value, vscode.ConfigurationTarget.Global)
       vscode.window.showInformationMessage(`Maximum tracks cache size set to ${value}`)
-      tracksCache = new LRUCache({ maxSize: value, sizeCalculation: () => 1 })
-    })
-  )
-  context.subscriptions.push(
-    vscode.commands.registerCommand('shuri.mobileMode', async () => {
-      const config = vscode.workspace.getConfiguration('shuri')
-      const currentValue = config.get<boolean>('mobileMode') ?? false
-      const newValue = !currentValue
-      await config.update('mobileMode', newValue, vscode.ConfigurationTarget.Global)
-      vscode.window.showInformationMessage(`Mobile mode ${newValue ? 'enabled' : 'disabled'}`)
-      if (panel && currentPlayingState) {
-        await updateLyrics(context)
-      }
+      tracksCache = createTracksCache(value)
     })
   )
   context.subscriptions.push(
@@ -199,12 +217,10 @@ export async function activate(context: vscode.ExtensionContext) {
         await authorize(context)
       }
       if (authState) {
-        if (panel) {
-          await printFrame(context)
-        }
+        await printFrame(context)
         return
       }
-      if (!panel) {
+      if (!hasActiveWebview()) {
         return
       }
       if (!server && !preAuthState) {
@@ -258,6 +274,9 @@ export async function deactivate() {
   authState = null
   preAuthState = null
   currentPlayingState = undefined
+  consecutivePollErrors = 0
+  hasVisibleSyncIssue = false
+  broadcast({ command: 'syncError', message: null })
 }
 
 async function resetAuth(context: vscode.ExtensionContext) {
@@ -266,15 +285,88 @@ async function resetAuth(context: vscode.ExtensionContext) {
   context.secrets.delete('refreshToken')
   context.secrets.delete('expiresIn')
   await deactivate()
-  if (panel) {
+  if (hasActiveWebview()) {
     await createServer(context)
     await printFrame(context)
-    panel.title = 'Spotify Lyrics'
-    panel.iconPath = vscode.Uri.file(path.join(context.extensionPath, 'assets/icon.png'))
+    if (panel) {
+      panel.title = 'Spotify Lyrics'
+      panel.iconPath = vscode.Uri.file(path.join(context.extensionPath, 'assets/icon.png'))
+    }
   }
 }
 
-async function printFrame(context: vscode.ExtensionContext) {
+type SurfaceKind = 'panel' | 'sidebar'
+
+function activeSurfaces(): { webview: vscode.Webview; kind: SurfaceKind }[] {
+  const surfaces: { webview: vscode.Webview; kind: SurfaceKind }[] = []
+  if (panel) {
+    surfaces.push({ webview: panel.webview, kind: 'panel' })
+  }
+  if (sidebarView) {
+    surfaces.push({ webview: sidebarView.webview, kind: 'sidebar' })
+  }
+  return surfaces
+}
+
+function activeWebviews(): vscode.Webview[] {
+  return activeSurfaces().map((surface) => surface.webview)
+}
+
+function isAnySurfaceVisible(): boolean {
+  return Boolean(panel?.visible) || Boolean(sidebarView?.visible)
+}
+
+function hasActiveWebview(): boolean {
+  return Boolean(panel || sidebarView)
+}
+
+async function handleWebviewMessage(context: vscode.ExtensionContext, message: any) {
+  if (message.command === 'seekToPosition') {
+    const timeMs = message.timeMs
+    if (authState) {
+      await SpotifyWebApi.seekToPosition(authState.accessToken, timeMs)
+    }
+  } else if (message.command === 'signInClicked') {
+    const clientId = message.message
+
+    const codeVerifier = generateCodeVerifier()
+    const sha256 = crypto.createHash('sha256').update(codeVerifier).digest()
+    const codeChallenge = sha256
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '')
+
+    preAuthState = new SpotifyPreAuthState(
+      clientId,
+      codeVerifier,
+      codeChallenge,
+      'authorization_code',
+      `http://127.0.0.1:${vscode.workspace.getConfiguration('shuri').get('port')}/callback`
+    )
+
+    vscode.env.openExternal(
+      vscode.Uri.parse(
+        await SpotifyWebApi.getAuthUrl(
+          vscode.workspace.getConfiguration('shuri').get('port')!,
+          clientId,
+          codeChallenge
+        )
+      )
+    )
+  } else if (message.command === 'ready') {
+    // The webview's script only just attached its message listener, so any
+    // postMessage broadcast sent before this point may have been dropped.
+    // Resend whatever we already know so it doesn't wait for the next poll.
+    await sendCurrentLyrics()
+  }
+}
+
+async function renderWebview(
+  context: vscode.ExtensionContext,
+  webview: vscode.Webview,
+  kind: SurfaceKind
+) {
   let htmlName
   let cssName
   let scriptName
@@ -282,6 +374,10 @@ async function printFrame(context: vscode.ExtensionContext) {
     htmlName = 'signInTemplate.html'
     cssName = './styles/signInStyle.css'
     scriptName = './scripts/signInScript.js'
+  } else if (kind === 'sidebar') {
+    htmlName = 'lyricsViewTemplate.html'
+    cssName = './styles/lyricsViewStyle.css'
+    scriptName = './scripts/lyricsViewScript.js'
   } else {
     htmlName = 'lyricsTemplate.html'
     cssName = './styles/lyricsStyle.css'
@@ -290,18 +386,20 @@ async function printFrame(context: vscode.ExtensionContext) {
   const html = (
     await vscode.workspace.fs.readFile(vscode.Uri.joinPath(context.extensionUri, 'media', htmlName))
   ).toString()
-  if (panel) {
-    const cssUri = panel.webview.asWebviewUri(
-      vscode.Uri.joinPath(context.extensionUri, 'media', cssName)
-    )
-    const scriptUri = panel.webview.asWebviewUri(
-      vscode.Uri.joinPath(context.extensionUri, 'media', scriptName)
-    )
-    const port = vscode.workspace.getConfiguration('shuri').get<number>('port') ?? 8000
-    panel.webview.html = html
-      .replace('{{PORT}}', String(port))
-      .replace('styles.css', cssUri.toString())
-      .replace('script.js', scriptUri.toString())
+  const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'media', cssName))
+  const scriptUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(context.extensionUri, 'media', scriptName)
+  )
+  const port = vscode.workspace.getConfiguration('shuri').get<number>('port') ?? 8000
+  webview.html = html
+    .replace('{{PORT}}', String(port))
+    .replace('styles.css', cssUri.toString())
+    .replace('script.js', scriptUri.toString())
+}
+
+async function printFrame(context: vscode.ExtensionContext) {
+  for (const { webview, kind } of activeSurfaces()) {
+    await renderWebview(context, webview, kind)
   }
 }
 
@@ -406,15 +504,50 @@ async function pollSpotifyStat(context: vscode.ExtensionContext) {
       }
       await updateLyrics(context)
     }
+    if (hasVisibleSyncIssue) {
+      broadcast({ command: 'syncError', message: null })
+      hasVisibleSyncIssue = false
+    }
+    consecutivePollErrors = 0
   } catch (err) {
     console.error(`pollSpotifyStat error: ${err}`)
     if (err instanceof SpotifyAuthError) {
+      consecutivePollErrors = 0
       await resetAuth(context)
       vscode.window.showWarningMessage('Your Spotify session has expired. Please sign in again.')
+    } else if (err instanceof SpotifyRateLimitError) {
+      consecutivePollErrors = 0
+      const seconds = Math.round(err.retryAfterMs / 1000)
+      const resumeAt = formatLocalDateTime(new Date(Date.now() + err.retryAfterMs))
+      broadcast({
+        command: 'syncError',
+        message: `Spotify API rate limit reached — resuming at ${resumeAt} (in ${seconds}s).`,
+      })
+      hasVisibleSyncIssue = true
+      dropCurrentHighlight()
+      pauseAndResumeAfter(context, err.retryAfterMs)
     } else {
-      vscode.window.showErrorMessage(`pollSpotifyStat error: ${err}`)
+      consecutivePollErrors++
+      broadcast({ command: 'syncError', message: String(err) })
+      hasVisibleSyncIssue = true
+      dropCurrentHighlight()
     }
   }
+}
+
+// "YYYY-MM-DD HH:mm:ss" in the user's local time zone. Deliberately not
+// using toLocaleString() — that varies by locale, and the raw retry-after
+// second count alone is hard to reason about, so we want one consistent,
+// unambiguous format regardless of the user's OS locale settings.
+function formatLocalDateTime(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const year = date.getFullYear()
+  const month = pad(date.getMonth() + 1)
+  const day = pad(date.getDate())
+  const hours = pad(date.getHours())
+  const minutes = pad(date.getMinutes())
+  const seconds = pad(date.getSeconds())
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
 function truncateTitle(title: string, maxLength: number = 40): string {
@@ -456,18 +589,45 @@ function updatePanelMeta(
     : vscode.Uri.parse(imageUrl)
 }
 
+function updateSidebarTitle(trackName?: string) {
+  if (!sidebarView) {
+    return
+  }
+  sidebarView.title = trackName ? `Shuri: ${trackName}` : 'Shuri: Asleep'
+}
+
+function broadcast(message: Record<string, unknown>) {
+  for (const webview of activeWebviews()) {
+    webview.postMessage(message)
+  }
+}
+
+// Drops the current-line highlight without touching what's displayed —
+// used whenever a poll can't confirm a match (nothing playing this tick,
+// lyrics lookup failed, an unexpected error) but we don't want to blank
+// out lyrics that were already showing correctly a moment ago.
+function dropCurrentHighlight() {
+  if (!currentPlayingState) {
+    return
+  }
+  broadcast({ command: 'pickLyrics', pick: -1 })
+}
+
 async function updateLyrics(context: vscode.ExtensionContext) {
   if (authState) {
-    const mobileMode: boolean =
-      vscode.workspace.getConfiguration('shuri').get('mobileMode') ?? false
     const currentlyPlayingResponse = await SpotifyWebApi.getCurrentlyPlaying(authState.accessToken)
     if (!currentlyPlayingResponse) {
-      currentPlayingState = undefined
-      if (panel) {
-        panel.webview.postMessage({ command: 'clearLyrics', color: '#333333' })
+      if (!currentPlayingState) {
+        broadcast({ command: 'clearLyrics' })
+        updateSidebarTitle()
+      } else {
+        // Could just be a brief pause, ad break, or device handoff rather
+        // than actual playback stopping — don't wipe what's on screen.
+        dropCurrentHighlight()
       }
       return
     }
+    const trackId: string = currentlyPlayingResponse.item.id
     const trackName: string = currentlyPlayingResponse.item.name
     const albumName: string = currentlyPlayingResponse.item.album.name
     const artistsNames: string[] = currentlyPlayingResponse.item.artists.map(
@@ -479,27 +639,34 @@ async function updateLyrics(context: vscode.ExtensionContext) {
     const artists: string = artistsNames.join(', ')
 
     updatePanelMeta(context, artists, trackName, albumImages[albumImages.length - 1].url)
-    if (
-      !currentPlayingState ||
-      currentPlayingState.authors !== artists ||
-      currentPlayingState.name !== trackName
-    ) {
+    updateSidebarTitle(trackName)
+
+    // Prefer comparing Spotify's stable track id over name/artists text —
+    // Spotify can reorder a multi-artist track's artist list between polls,
+    // which would otherwise look like a track change and trigger a needless
+    // (and possibly failing) lyrics re-fetch mid-song.
+    const matchesCurrentTrack = (state: SpotifyCurrentPlayingState | undefined) =>
+      Boolean(
+        state &&
+        (trackId && state.trackId
+          ? state.trackId === trackId
+          : state.authors === artists && state.name === trackName)
+      )
+
+    if (!matchesCurrentTrack(currentPlayingState)) {
       const trackCache: SpotifyCurrentPlayingState | undefined = tracksCache.get(
         makeTrackKey(trackName, artists)
       )
       if (trackCache) {
         currentPlayingState = trackCache
-        postLyricsToPanel(trackCache, mobileMode)
+        postLyrics(trackCache)
       }
     }
-    if (
-      !currentPlayingState ||
-      currentPlayingState.authors !== artists ||
-      currentPlayingState.name !== trackName
-    ) {
+    if (!matchesCurrentTrack(currentPlayingState)) {
       const lyricsResult = await provider.getLyrics(trackName, artists, albumName, durationInS)
       if (lyricsResult && !lyricsResult.instrumental) {
         const currentlyPlayingPoll = new SpotifyCurrentPlayingState(trackName, artists)
+        currentlyPlayingPoll.trackId = trackId
         if (lyricsResult.plainLyrics) {
           const plainLyricsStrs: string[] = lyricsResult.plainLyrics
             .split(/\n/)
@@ -537,46 +704,32 @@ async function updateLyrics(context: vscode.ExtensionContext) {
           currentlyPlayingPoll.synchronizedLyricsMap = synchronizedLyricsMap
         }
         currentPlayingState = currentlyPlayingPoll
-        const coverColor: string = await getAccentColorFromUrl(albumImages[0].url)
-        currentPlayingState.coverColor = coverColor
-        currentPlayingState.textColor = generateTextColor(currentPlayingState.coverColor)
         tracksCache.set(
           makeTrackKey(currentPlayingState.name, currentPlayingState.authors),
           currentPlayingState
         )
         currentPlayingState.synchronizedLyricsStrs =
           buildSynchronizedLyricsStrs(currentPlayingState)
-        postLyricsToPanel(currentPlayingState, mobileMode)
+        postLyrics(currentPlayingState)
+      } else if (!currentPlayingState) {
+        // Nothing has ever matched yet this session — only now is it
+        // correct to show the "no lyrics" placeholder.
+        broadcast({ command: 'clearLyrics' })
       } else {
-        currentPlayingState = undefined
-        if (panel) {
-          panel.webview.postMessage({ command: 'clearLyrics', color: '#333333' })
-        }
+        // We already have lyrics on screen for a previous match. This one
+        // poll failing to match (LRCLib miss, transient error, etc.)
+        // shouldn't blank the view — just drop the current-line highlight
+        // and keep showing what's there until a future poll matches again.
+        // currentPlayingState is intentionally left untouched so the next
+        // successful match can take over normally.
+        dropCurrentHighlight()
       }
-    } else {
-      if (currentPlayingState.synchronizedLyricsMap && panel) {
-        const mobileMode: boolean =
-          vscode.workspace.getConfiguration('shuri').get('mobileMode') ?? false
+    } else if (currentPlayingState) {
+      if (currentPlayingState.synchronizedLyricsMap) {
         const value = currentPlayingState.synchronizedLyricsMap.floorEntry(
           currentlyPlayingResponse.progress_ms
         )
-        if (value) {
-          panel.webview.postMessage({
-            command: 'pickLyrics',
-            pick: value[1].id,
-            color: currentPlayingState.coverColor,
-            textColor: '#' + currentPlayingState.textColor,
-            mobileMode: mobileMode,
-          })
-        } else {
-          panel.webview.postMessage({
-            command: 'pickLyrics',
-            pick: -1,
-            color: currentPlayingState.coverColor,
-            textColor: '#' + currentPlayingState.textColor,
-            mobileMode: mobileMode,
-          })
-        }
+        broadcast({ command: 'pickLyrics', pick: value ? value[1].id : -1 })
       }
     }
   }
@@ -597,36 +750,19 @@ function buildSynchronizedLyricsStrs(state: SpotifyCurrentPlayingState): object[
   return synchronizedLyricsStrs
 }
 
-function postLyricsToPanel(state: SpotifyCurrentPlayingState, mobileMode: boolean) {
-  if (!panel) {
-    return
-  }
-  if (!state.synchronizedLyricsMap) {
-    panel.webview.postMessage({
-      command: 'addLyrics',
-      lyrics: state.plainLyricsStrs,
-      color: state.coverColor,
-      textColor: '#' + state.textColor,
-      mobileMode: mobileMode,
-    })
-  } else {
-    panel.webview.postMessage({
-      command: 'addLyrics',
-      lyrics: state.synchronizedLyricsStrs,
-      color: state.coverColor,
-      textColor: '#' + state.textColor,
-      mobileMode: mobileMode,
-    })
-  }
+function postLyrics(state: SpotifyCurrentPlayingState) {
+  broadcast({
+    command: 'addLyrics',
+    lyrics: state.synchronizedLyricsMap ? state.synchronizedLyricsStrs : state.plainLyricsStrs,
+  })
 }
 
-async function sendCurrentLyricsToPanel() {
-  if (!panel || !currentPlayingState || !authState) {
+async function sendCurrentLyrics() {
+  if (!hasActiveWebview() || !currentPlayingState || !authState) {
     return
   }
-  const mobileMode: boolean = vscode.workspace.getConfiguration('shuri').get('mobileMode') ?? false
 
-  postLyricsToPanel(currentPlayingState, mobileMode)
+  postLyrics(currentPlayingState)
 
   if (currentPlayingState.synchronizedLyricsMap) {
     const currentlyPlayingResponse = await SpotifyWebApi.getCurrentlyPlaying(authState.accessToken)
@@ -634,23 +770,7 @@ async function sendCurrentLyricsToPanel() {
       const value = currentPlayingState.synchronizedLyricsMap.floorEntry(
         currentlyPlayingResponse.progress_ms
       )
-      if (value) {
-        panel.webview.postMessage({
-          command: 'pickLyrics',
-          pick: value[1].id,
-          color: currentPlayingState.coverColor,
-          textColor: '#' + currentPlayingState.textColor,
-          mobileMode: mobileMode,
-        })
-      } else {
-        panel.webview.postMessage({
-          command: 'pickLyrics',
-          pick: -1,
-          color: currentPlayingState.coverColor,
-          textColor: '#' + currentPlayingState.textColor,
-          mobileMode: mobileMode,
-        })
-      }
+      broadcast({ command: 'pickLyrics', pick: value ? value[1].id : -1 })
     }
   }
 }
@@ -682,9 +802,32 @@ function startPollingLoop(context: vscode.ExtensionContext) {
       await pollSpotifyStat(context)
     } finally {
       if (pollingActive) {
-        pollingTimeout = setTimeout(loop, 300)
+        pollingTimeout = setTimeout(loop, nextPollDelay())
       }
     }
   }
   loop()
+}
+
+// Stops scheduling further polls without touching auth/session state, so it
+// can resume seamlessly via startPollingLoop() once something is visible
+// again. Unlike deactivate(), this is meant to be temporary.
+function pausePollingLoop() {
+  pollingActive = false
+  if (pollingTimeout) {
+    clearTimeout(pollingTimeout)
+    pollingTimeout = null
+  }
+}
+
+// Used for Spotify rate limiting: stop polling entirely for the duration
+// the API told us to back off, then resume on our own rather than waiting
+// for a visibility change.
+function pauseAndResumeAfter(context: vscode.ExtensionContext, delayMs: number) {
+  pausePollingLoop()
+  pollingTimeout = setTimeout(() => {
+    if (authState) {
+      startPollingLoop(context)
+    }
+  }, delayMs)
 }
