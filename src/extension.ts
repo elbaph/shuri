@@ -2,7 +2,7 @@ import * as crypto from 'crypto'
 import * as http from 'http'
 import { IncomingMessage } from 'node:http'
 import path from 'node:path'
-import { clearTimeout } from 'node:timers'
+import { clearInterval, clearTimeout } from 'node:timers'
 
 import LRUCache from 'lru-cache'
 import TreeMap from 'ts-treemap'
@@ -31,10 +31,20 @@ let pollingActive = false
 let consecutivePollErrors = 0
 let hasVisibleSyncIssue = false
 
+// Lets the highlighted line keep advancing smoothly between the much
+// coarser network polls below, by locally estimating elapsed playback time
+// instead of waiting on a round trip to Spotify for every line change.
+let highlightTimer: NodeJS.Timeout | null = null
+let progressAnchorMs: number | undefined
+let progressAnchorAtMs: number | undefined
+let progressIsPlaying = false
+let lastBroadcastPick: number | undefined
+
 const provider: LyricsProvider = new LRCLibLyricsProvider()
 
-const BASE_POLL_INTERVAL_MS = 300
+const BASE_POLL_INTERVAL_MS = 3_000
 const MAX_POLL_INTERVAL_MS = 10_000
+const HIGHLIGHT_TICK_MS = 250
 
 function nextPollDelay(): number {
   if (consecutivePollErrors === 0) {
@@ -267,6 +277,12 @@ export async function deactivate() {
     clearTimeout(pollingTimeout)
     pollingTimeout = null
   }
+  if (highlightTimer) {
+    clearInterval(highlightTimer)
+    highlightTimer = null
+  }
+  clearProgressAnchor()
+  lastBroadcastPick = undefined
   if (server) {
     server.close()
     server = null
@@ -607,10 +623,56 @@ function broadcast(message: Record<string, unknown>) {
 // lyrics lookup failed, an unexpected error) but we don't want to blank
 // out lyrics that were already showing correctly a moment ago.
 function dropCurrentHighlight() {
+  clearProgressAnchor()
   if (!currentPlayingState) {
     return
   }
+  lastBroadcastPick = -1
   broadcast({ command: 'pickLyrics', pick: -1 })
+}
+
+// Records the playback position/state a poll just confirmed, so
+// tickHighlight() can estimate progress between polls instead of only
+// advancing the highlighted line once per (now much slower) network poll.
+function setProgressAnchor(progressMs: number, isPlaying: boolean) {
+  progressAnchorMs = progressMs
+  progressAnchorAtMs = Date.now()
+  progressIsPlaying = isPlaying
+}
+
+function clearProgressAnchor() {
+  progressAnchorMs = undefined
+  progressAnchorAtMs = undefined
+}
+
+function estimatedProgressMs(): number | undefined {
+  if (progressAnchorMs === undefined || progressAnchorAtMs === undefined) {
+    return undefined
+  }
+  if (!progressIsPlaying) {
+    return progressAnchorMs
+  }
+  return progressAnchorMs + (Date.now() - progressAnchorAtMs)
+}
+
+// Runs on HIGHLIGHT_TICK_MS, independent of the network poll interval, so
+// the current line keeps advancing smoothly instead of jumping forward
+// only once every BASE_POLL_INTERVAL_MS.
+function tickHighlight() {
+  if (!currentPlayingState?.synchronizedLyricsMap) {
+    return
+  }
+  const estimate = estimatedProgressMs()
+  if (estimate === undefined) {
+    return
+  }
+  const value = currentPlayingState.synchronizedLyricsMap.floorEntry(estimate)
+  const pick = value ? value[1].id : -1
+  if (pick === lastBroadcastPick) {
+    return
+  }
+  lastBroadcastPick = pick
+  broadcast({ command: 'pickLyrics', pick })
 }
 
 async function updateLyrics(context: vscode.ExtensionContext) {
@@ -627,6 +689,8 @@ async function updateLyrics(context: vscode.ExtensionContext) {
       }
       return
     }
+    setProgressAnchor(currentlyPlayingResponse.progress_ms, currentlyPlayingResponse.is_playing)
+
     const trackId: string = currentlyPlayingResponse.item.id
     const trackName: string = currentlyPlayingResponse.item.name
     const albumName: string = currentlyPlayingResponse.item.album.name
@@ -711,6 +775,7 @@ async function updateLyrics(context: vscode.ExtensionContext) {
         currentPlayingState.synchronizedLyricsStrs =
           buildSynchronizedLyricsStrs(currentPlayingState)
         postLyrics(currentPlayingState)
+        tickHighlight()
       } else if (!currentPlayingState) {
         // Nothing has ever matched yet this session — only now is it
         // correct to show the "no lyrics" placeholder.
@@ -725,12 +790,7 @@ async function updateLyrics(context: vscode.ExtensionContext) {
         dropCurrentHighlight()
       }
     } else if (currentPlayingState) {
-      if (currentPlayingState.synchronizedLyricsMap) {
-        const value = currentPlayingState.synchronizedLyricsMap.floorEntry(
-          currentlyPlayingResponse.progress_ms
-        )
-        broadcast({ command: 'pickLyrics', pick: value ? value[1].id : -1 })
-      }
+      tickHighlight()
     }
   }
 }
@@ -767,10 +827,8 @@ async function sendCurrentLyrics() {
   if (currentPlayingState.synchronizedLyricsMap) {
     const currentlyPlayingResponse = await SpotifyWebApi.getCurrentlyPlaying(authState.accessToken)
     if (currentlyPlayingResponse) {
-      const value = currentPlayingState.synchronizedLyricsMap.floorEntry(
-        currentlyPlayingResponse.progress_ms
-      )
-      broadcast({ command: 'pickLyrics', pick: value ? value[1].id : -1 })
+      setProgressAnchor(currentlyPlayingResponse.progress_ms, currentlyPlayingResponse.is_playing)
+      tickHighlight()
     }
   }
 }
@@ -797,6 +855,7 @@ function startPollingLoop(context: vscode.ExtensionContext) {
     return
   }
   pollingActive = true
+  highlightTimer = setInterval(tickHighlight, HIGHLIGHT_TICK_MS)
   const loop = async () => {
     try {
       await pollSpotifyStat(context)
@@ -817,6 +876,10 @@ function pausePollingLoop() {
   if (pollingTimeout) {
     clearTimeout(pollingTimeout)
     pollingTimeout = null
+  }
+  if (highlightTimer) {
+    clearInterval(highlightTimer)
+    highlightTimer = null
   }
 }
 
