@@ -3,8 +3,8 @@
   <img src="assets/shuri-banner.jpeg" width="400" alt="Shuri logo"/>
   <p><i>See synchronized Spotify lyrics inside VS Code while coding.</i></p>
 <p>
-  <a href="https://marketplace.visualstudio.com/items?itemName=therepanic.spotilyrics"><img src="https://img.shields.io/badge/VSCode-Extension-blue?style=flat&logo=visualstudiocode" /></a>
-  <a href="https://open-vsx.org/extension/therepanic/spotilyrics">
+  <a href="https://marketplace.visualstudio.com/items?itemName=o-p.shuri"><img src="https://img.shields.io/badge/VSCode-Extension-blue?style=flat&logo=visualstudiocode" /></a>
+  <a href="https://open-vsx.org/extension/o-p/shuri">
   <img src="https://img.shields.io/badge/OpenVSX-Extension-7E3ACB?style=flat&logo=eclipseide&logoColor=white&label=openvsx"/></a>
   <a href="https://developer.spotify.com/documentation/web-api"><img src="https://img.shields.io/badge/Spotify-API-1DB954?style=flat&logo=spotify" /></a>
   <a href="https://lrclib.net"><img src="https://img.shields.io/badge/LRClib-Lyrics-000042?style=flat&logo=musicbrainz&logoColor=white"/></a>
@@ -27,7 +27,7 @@
 
 ## :zap: Installation
 
-1. Open **VS Code** → Extensions → search `spotilyrics` or [install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=therepanic.spotilyrics) or from [Open VSX Registry](https://open-vsx.org/extension/therepanic/spotilyrics).
+1. Open **VS Code** → Extensions → search `Shuri` or [install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=o-p.shuri) or from [Open VSX Registry](https://open-vsx.org/extension/o-p/shuri).
 
 2. Run the command:
 
