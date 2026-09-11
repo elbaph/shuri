@@ -5,10 +5,12 @@ import { LyricsEntry } from './LyricsEntry'
 export class SpotifyCurrentPlayingState {
   name: string
   authors: string
+  // Spotify track id, when known. Used to detect an actual track change
+  // instead of comparing name/authors text, which can spuriously differ
+  // between polls if Spotify reorders a multi-artist track's artist list.
+  trackId?: string
   plainLyricsStrs?: string[]
   synchronizedLyricsStrs?: object[]
-  coverColor?: string
-  textColor?: string
   synchronizedLyricsMap?: TreeMap<number, LyricsEntry>
 
   constructor(

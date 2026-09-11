@@ -5,21 +5,11 @@
   "publisher": "o-p",
   "version": "1.1.2",
   "engines": {
-    "vscode": "^1.66.0"
+    "vscode": "^1.123.0"
   },
   "icon": "assets/logo.jpeg",
   "categories": [
     "Other"
-  ],
-  "activationEvents": [
-    "onCommand:shuri.lyrics",
-    "onCommand:shuri.logout",
-    "onCommand:shuri.tracksCacheMaxSize",
-    "onCommand:shuri.port",
-    "onCommand:shuri.mobileMode",
-    "onCommand:shuri.songTitle",
-    "onCommand:shuri.songIcon",
-    "onCommand:shuri.songArtists"
   ],
   "main": "./out/extension.js",
   "repository": {
@@ -43,11 +33,6 @@
           "minimum": 1,
           "maximum": 9007199254740991,
           "description": "Maximum cache size for tracks."
-        },
-        "shuri.mobileMode": {
-          "type": "boolean",
-          "default": false,
-          "description": "Mobile mode: black unplayed lines, white played lines."
         },
         "shuri.songTitle": {
           "type": "boolean",
@@ -80,10 +65,6 @@
         "title": "Set Tracks Cache Max Size"
       },
       {
-        "command": "shuri.mobileMode",
-        "title": "Toggle Mobile Mode"
-      },
-      {
         "command": "shuri.port",
         "title": "Set Spotify OAuth Callback Port"
       },
@@ -99,13 +80,57 @@
         "command": "shuri.songArtists",
         "title": "Toggle Song Artists"
       }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "shuri.lyricsView",
+          "icon": "assets/icon.png",
+          "name": "Shuri Lyrics",
+          "type": "webview"
+        }
+      ]
+    },
+    "problemMatchers": [
+      {
+        "name": "esbuild-watch",
+        "label": "esbuild watch",
+        "owner": "typescript",
+        "source": "esbuild",
+        "applyTo": "closedDocuments",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": [
+          {
+            "regexp": "^\\s*✘ \\[ERROR\\] (.*)$",
+            "message": 1
+          },
+          {
+            "regexp": "^\\s*(.*):(\\d+):(\\d+):$",
+            "file": 1,
+            "line": 2,
+            "column": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\[watch\\] build started$",
+          "endsPattern": "^\\[watch\\] build finished$"
+        }
+      }
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
+    "vscode:prepublish": "npm run bundle",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "bundle": "npm run check-types && npm run lint && node esbuild.js --production",
+    "check-types": "tsc --noEmit -p ./",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch -p ./",
+    "watch": "npm run watch:esbuild & npm run watch:tsc",
+    "pretest": "npm run compile",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -115,16 +140,16 @@
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
-    "@types/colorthief": "^2.6.0",
     "@types/mocha": "^10.0.10",
-    "@types/node": "20.x",
+    "@types/node": "24.x",
     "@types/node-fetch": "^2.6.13",
-    "@types/vscode": "^1.66.0",
+    "@types/vscode": "^1.123.0",
     "@typescript-eslint/eslint-plugin": "^8.41.0",
     "@typescript-eslint/parser": "^8.41.0",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.24.2",
     "eslint": "^9.34.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
@@ -132,7 +157,6 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "colorthief": "^2.6.0",
     "lru-cache": "^7.18.3",
     "node-fetch": "^2.7.0",
     "ts-treemap": "^1.1.0",

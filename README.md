@@ -18,10 +18,9 @@
 ## :sparkles: Features
 
 - :pushpin: **Live lyrics sync** with your Spotify playback.
-- :art: Lyrics colors auto-themed from album cover (via `colorthief`).
+- :art: Lyrics follow your VS Code color theme.
 - :desktop_computer: Smooth **side panel view** – code on the left, lyrics on the right.
 - :computer_mouse: **Click-to-seek** – click on any lyric line to jump to that moment in the track (like Spotify app).
-- :iphone: **Mobile mode** – black unplayed lines, white played lines (like Spotify mobile app).
 - :key: Simple **one-time login** using your own Spotify Client ID.
 - :door: Quick logout command to reset session.
 - :zap: Set a **maximum tracks cache size** for lyrics syncing.
@@ -54,7 +53,6 @@ Show Spotify Lyrics via Shuri
 - `Logout from Shuri` (`shuri.logout`) – clear session and re-auth when needed.
 - `Set Tracks Cache Max Size` (`shuri.tracksCacheMaxSize`) – configure the maximum number of tracks cached for lyrics.
 - `Set Spotify OAuth Callback Port` (`shuri.port`) – set the local callback port used for Spotify OAuth.
-- `Toggle Mobile Mode` (`shuri.mobileMode`) – switch between normal and mobile mode.
 - `Toggle Song Title` (`shuri.songTitle`) – toggle the song title in the lyrics panel.
 - `Toggle Song Icon` (`shuri.songIcon`) – toggle the song icon in the lyrics panel.
 - `Toggle Song Artists` (`shuri.songArtists`) – toggle the song artists in the lyrics panel.
@@ -63,8 +61,25 @@ Show Spotify Lyrics via Shuri
 
 - [Spotify Web API](https://developer.spotify.com/documentation/web-api/)
 - [LRClib](https://lrclib.net/) for lyrics with timing
-- [colorthief](https://lokeshdhakar.com/projects/color-thief/) for cover-based theme
 - TypeScript + VS Code WebView
+
+## :hammer_and_wrench: Development
+
+All day-to-day commands go through `make` — run `make help` any time for the full, up-to-date list.
+
+```bash
+make install   # install dependencies (first time only)
+make compile   # type-check + lint + esbuild bundle, once
+make watch     # rebuild on save (used automatically by F5 "Run Extension")
+make lint      # ESLint
+make format    # Prettier, whole repo
+make test      # vscode-test (compiles first)
+make package   # bundle and package into a .vsix
+make dev       # package + install into a local VS Code profile for manual testing
+make clean     # remove build output
+```
+
+For everyday development, press **F5** in VS Code (Run Extension) rather than repackaging — it runs `make watch` under the hood and reloads much faster. `make dev` is for verifying real install behavior (e.g. marketplace update paths, cold-start activation) that only shows up once actually installed.
 
 ## :scroll: License
 
