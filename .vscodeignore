@@ -4,6 +4,10 @@
 
 .github/
 .claude/
+graft/
+.mcp.json
+.ignore
+Makefile
 src/**
 out/**/*.map
 tsconfig.json

@@ -63,6 +63,24 @@ Show Spotify Lyrics via Shuri
 - [LRClib](https://lrclib.net/) for lyrics with timing
 - TypeScript + VS Code WebView
 
+## :hammer_and_wrench: Development
+
+All day-to-day commands go through `make` — run `make help` any time for the full, up-to-date list.
+
+```bash
+make install   # install dependencies (first time only)
+make compile   # type-check + lint + esbuild bundle, once
+make watch     # rebuild on save (used automatically by F5 "Run Extension")
+make lint      # ESLint
+make format    # Prettier, whole repo
+make test      # vscode-test (compiles first)
+make package   # bundle and package into a .vsix
+make dev       # package + install into a local VS Code profile for manual testing
+make clean     # remove build output
+```
+
+For everyday development, press **F5** in VS Code (Run Extension) rather than repackaging — it runs `make watch` under the hood and reloads much faster. `make dev` is for verifying real install behavior (e.g. marketplace update paths, cold-start activation) that only shows up once actually installed.
+
 ## :scroll: License
 
 This project is licensed as **Unlicensed**.  
