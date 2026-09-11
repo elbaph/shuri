@@ -5,21 +5,11 @@
   "publisher": "o-p",
   "version": "1.1.2",
   "engines": {
-    "vscode": "^1.66.0"
+    "vscode": "^1.123.0"
   },
   "icon": "assets/logo.jpeg",
   "categories": [
     "Other"
-  ],
-  "activationEvents": [
-    "onCommand:shuri.lyrics",
-    "onCommand:shuri.logout",
-    "onCommand:shuri.tracksCacheMaxSize",
-    "onCommand:shuri.port",
-    "onCommand:shuri.songTitle",
-    "onCommand:shuri.songIcon",
-    "onCommand:shuri.songArtists",
-    "onView:shuri.lyricsView"
   ],
   "main": "./out/extension.js",
   "repository": {
@@ -151,9 +141,9 @@
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/mocha": "^10.0.10",
-    "@types/node": "20.x",
+    "@types/node": "24.x",
     "@types/node-fetch": "^2.6.13",
-    "@types/vscode": "^1.66.0",
+    "@types/vscode": "^1.123.0",
     "@typescript-eslint/eslint-plugin": "^8.41.0",
     "@typescript-eslint/parser": "^8.41.0",
     "@vscode/test-cli": "^0.0.11",
