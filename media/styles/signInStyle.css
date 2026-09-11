@@ -6,7 +6,7 @@
 
 html,
 body {
-  overflow-x: hidden;
+  height: 100%;
 }
 
 body {
@@ -17,7 +17,6 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
   padding: 0;
 }
 
