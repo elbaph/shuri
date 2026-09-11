@@ -28,8 +28,15 @@ let tracksCache: LRUCache<string, SpotifyCurrentPlayingState>
 let server: http.Server | null
 let pollingTimeout: NodeJS.Timeout | null
 let pollingActive = false
+let pollLoopRunning = false
 let consecutivePollErrors = 0
 let hasVisibleSyncIssue = false
+
+// Tracks OS-level window focus (distinct from webview/panel visibility,
+// which is what pollingActive is gated on) so we can cut Spotify API
+// traffic while the IDE is in the background without touching the local
+// highlight animation below.
+let windowFocused = true
 
 // Lets the highlighted line keep advancing smoothly between the much
 // coarser network polls below, by locally estimating elapsed playback time
@@ -105,6 +112,29 @@ export async function activate(context: vscode.ExtensionContext) {
   // previously this was only created inside the shuri.lyrics command
   // handler, so sidebar-only usage hit tracksCache.get() on undefined.
   tracksCache = createTracksCache()
+
+  windowFocused = vscode.window.state.focused
+  context.subscriptions.push(
+    vscode.window.onDidChangeWindowState((state) => {
+      windowFocused = state.focused
+      if (state.focused) {
+        resumeNetworkPollingOnFocus(context)
+      } else if (shouldPauseOnBlur()) {
+        pauseNetworkPollingOnBlur()
+      }
+    })
+  )
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('shuri.pauseOnBlur') && !windowFocused) {
+        if (shouldPauseOnBlur()) {
+          pauseNetworkPollingOnBlur()
+        } else {
+          resumeNetworkPollingOnFocus(context)
+        }
+      }
+    })
+  )
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('shuri.lyricsView', new LyricsViewProvider(context), {
@@ -850,22 +880,37 @@ async function authorize(context: vscode.ExtensionContext) {
   }
 }
 
+// shuri.pauseOnBlur (default true) lets users opt out and keep polling at
+// full frequency even while the IDE window is unfocused.
+function shouldPauseOnBlur(): boolean {
+  return vscode.workspace.getConfiguration('shuri').get('pauseOnBlur') ?? true
+}
+
+function networkPollingAllowedByFocus(): boolean {
+  return windowFocused || !shouldPauseOnBlur()
+}
+
+async function pollLoop(context: vscode.ExtensionContext) {
+  pollLoopRunning = true
+  try {
+    await pollSpotifyStat(context)
+  } finally {
+    pollLoopRunning = false
+    if (pollingActive && networkPollingAllowedByFocus()) {
+      pollingTimeout = setTimeout(() => pollLoop(context), nextPollDelay())
+    }
+  }
+}
+
 function startPollingLoop(context: vscode.ExtensionContext) {
   if (pollingActive) {
     return
   }
   pollingActive = true
   highlightTimer = setInterval(tickHighlight, HIGHLIGHT_TICK_MS)
-  const loop = async () => {
-    try {
-      await pollSpotifyStat(context)
-    } finally {
-      if (pollingActive) {
-        pollingTimeout = setTimeout(loop, nextPollDelay())
-      }
-    }
+  if (networkPollingAllowedByFocus()) {
+    pollLoop(context)
   }
-  loop()
 }
 
 // Stops scheduling further polls without touching auth/session state, so it
@@ -893,4 +938,21 @@ function pauseAndResumeAfter(context: vscode.ExtensionContext, delayMs: number) 
       startPollingLoop(context)
     }
   }, delayMs)
+}
+
+// Only cuts the network poll schedule, leaving highlightTimer running so the
+// lyrics keep animating locally (via the progress anchor) while the IDE is
+// unfocused. Distinct from pausePollingLoop(), which is gated on webview
+// visibility and stops both.
+function pauseNetworkPollingOnBlur() {
+  if (pollingTimeout) {
+    clearTimeout(pollingTimeout)
+    pollingTimeout = null
+  }
+}
+
+function resumeNetworkPollingOnFocus(context: vscode.ExtensionContext) {
+  if (pollingActive && !pollingTimeout && !pollLoopRunning) {
+    pollLoop(context)
+  }
 }
