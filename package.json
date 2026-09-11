@@ -3,7 +3,7 @@
   "displayName": "Shuri: Code & Soul",
   "description": "👁️ View synced Spotify lyrics in the Explorer view",
   "publisher": "o-p",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "engines": {
     "vscode": "^1.123.0"
   },
