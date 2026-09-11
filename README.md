@@ -17,6 +17,10 @@
 
 ## ✨ Features
 
+<table>
+<tr>
+<td valign="center">
+
 - 📌 **Live lyrics sync** with your Spotify playback.
 - 🎨 Lyrics follow your VS Code color theme.
 - 🖥️ Smooth **side panel view** – code on the left, lyrics on the right.
@@ -24,6 +28,13 @@
 - 🔑 Simple **one-time login** using your own Spotify Client ID.
 - 🚪 Quick logout command to reset session.
 - ⚡ Set a **maximum tracks cache size** for lyrics syncing.
+
+</td>
+<td width="240" valign="center">
+<img src="assets/preview.png" width="220" alt="Shuri lyrics synced in the VS Code Explorer view"/>
+</td>
+</tr>
+</table>
 
 ## ⚡ Installation
 
