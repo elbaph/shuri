@@ -1,6 +1,6 @@
 <div align="center">
   <br/>
-  <img src="assets/banner.jpg" width="350" alt="Shuri logo"/>
+  <img src="assets/shuri-banner.jpeg" width="400" alt="Shuri logo"/>
   <p><i>See synchronized Spotify lyrics inside VS Code while coding.</i></p>
 <p>
   <a href="https://marketplace.visualstudio.com/items?itemName=therepanic.spotilyrics"><img src="https://img.shields.io/badge/VSCode-Extension-blue?style=flat&logo=visualstudiocode" /></a>
@@ -39,7 +39,7 @@ Show Spotify Lyrics via Shuri
 
 1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
 2. Create an app → copy **Client ID**.
-3. **Important:** set the **Redirect URI** for your app to: `http://127.0.0.1:<port>/callback` (default: `5566`).  
+3. **Important:** set the **Redirect URI** for your app to: `http://127.0.0.1:<port>/callback` (default: `5566`).
    You can change the port in settings (`shuri.port`) or via the command `Set Spotify OAuth Callback Port`.
 4. Run the `Show Spotify Lyrics via Shuri` command.
 5. Paste your **Client ID** in the panel and log in.
@@ -83,5 +83,5 @@ For everyday development, press **F5** in VS Code (Run Extension) rather than re
 
 ## :scroll: License
 
-This project is licensed as **Unlicensed**.  
+This project is licensed as **Unlicensed**.
 Feel free to use, hack, and remix it.
