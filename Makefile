@@ -11,7 +11,7 @@
 PROFILE ?= side-project
 VSIX := shuri-dev.vsix
 
-.PHONY: help install compile watch lint format test package dev clean
+.PHONY: help install compile watch lint format test package dev clean release
 
 help: ## List all targets
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -45,3 +45,12 @@ dev: package ## Package + install into a test profile (default $(PROFILE), overr
 
 clean: ## Remove build output (out/) and the packaged vsix
 	rm -rf out $(VSIX)
+
+release: ## Bump version, tag, push, and cut a GitHub Release (triggers the publish workflow). Usage: make release VERSION=x.y.z|patch|minor|major
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Usage: make release VERSION=x.y.z|patch|minor|major"; \
+		exit 1; \
+	fi
+	npm version $(VERSION) -m "Release %s"
+	git push && git push --tags
+	gh release create "v$$(node -p "require('./package.json').version")" --generate-notes
