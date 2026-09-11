@@ -40,11 +40,7 @@
 
 1. Open **VS Code** → Extensions → search `Shuri` or [install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=o-p.shuri) or from [Open VSX Registry](https://open-vsx.org/extension/o-p/shuri).
 
-2. Run the command:
-
-```
-Show Spotify Lyrics via Shuri
-```
+2. Open the **Explorer** view in the sidebar — you'll find a **Shuri Lyrics** panel there. Keep it visible and lyrics stay in sync with your Spotify playback automatically.
 
 ## 🔑 Authentication (one-time setup)
 
@@ -52,7 +48,7 @@ Show Spotify Lyrics via Shuri
 2. Create an app → copy **Client ID**.
 3. **Important:** set the **Redirect URI** for your app to: `http://127.0.0.1:<port>/callback` (default: `5566`).
    You can change the port in settings (`shuri.port`) or via the command `Set Spotify OAuth Callback Port`.
-4. Run the `Show Spotify Lyrics via Shuri` command.
+4. Open the **Explorer** sidebar and expand the **Shuri Lyrics** panel.
 5. Paste your **Client ID** in the panel and log in.
 6. Enjoy synced lyrics while coding! 🎶
 
@@ -60,7 +56,7 @@ Show Spotify Lyrics via Shuri
 
 ## ⌨️ Commands
 
-- `Show Spotify Lyrics via Shuri` (`shuri.lyrics`) – open synced lyrics panel.
+- `Show Spotify Lyrics via Shuri` (`shuri.lyrics`) – open synced lyrics in a side-by-side editor panel, as an alternative to the Explorer view.
 - `Logout from Shuri` (`shuri.logout`) – clear session and re-auth when needed.
 - `Set Tracks Cache Max Size` (`shuri.tracksCacheMaxSize`) – configure the maximum number of tracks cached for lyrics.
 - `Set Spotify OAuth Callback Port` (`shuri.port`) – set the local callback port used for Spotify OAuth.
