@@ -9,3 +9,5 @@ out/**/*.map
 tsconfig.json
 eslint.config.mjs
 .prettierrc
+esbuild.js
+node_modules/**
