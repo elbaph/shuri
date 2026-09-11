@@ -99,13 +99,47 @@
         "command": "shuri.songArtists",
         "title": "Toggle Song Artists"
       }
+    ],
+    "problemMatchers": [
+      {
+        "name": "esbuild-watch",
+        "label": "esbuild watch",
+        "owner": "typescript",
+        "source": "esbuild",
+        "applyTo": "closedDocuments",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": [
+          {
+            "regexp": "^\\s*✘ \\[ERROR\\] (.*)$",
+            "message": 1
+          },
+          {
+            "regexp": "^\\s*(.*):(\\d+):(\\d+):$",
+            "file": 1,
+            "line": 2,
+            "column": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\[watch\\] build started$",
+          "endsPattern": "^\\[watch\\] build finished$"
+        }
+      }
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
+    "vscode:prepublish": "npm run bundle",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "bundle": "npm run check-types && npm run lint && node esbuild.js --production",
+    "check-types": "tsc --noEmit -p ./",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch -p ./",
+    "watch": "npm run watch:esbuild & npm run watch:tsc",
+    "pretest": "npm run compile",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -125,6 +159,7 @@
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.24.2",
     "eslint": "^9.34.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
