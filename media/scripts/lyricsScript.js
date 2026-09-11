@@ -1,7 +1,6 @@
 const vscode = acquireVsCodeApi()
 let lastLyricsHash = ''
 let lastPickId = null
-let mobileMode = false
 let autoFollowActiveLine = true
 let suppressScrollHandling = false
 let suppressScrollHandlingTimeout = null
@@ -44,32 +43,45 @@ syncButton.addEventListener('click', () => {
 })
 
 window.addEventListener('message', (event) => {
-  const { command, lyrics, pick, color, textColor, mobileMode: mobileModeFlag } = event.data
-  const body = document.body
-  if (color && body.style.backgroundColor !== color) {
-    body.style.backgroundColor = color
-  }
-  if (mobileModeFlag !== undefined) {
-    mobileMode = mobileModeFlag
-  }
+  const { command, lyrics, pick } = event.data
   if (command === 'addLyrics') {
     const lyricsHash = JSON.stringify(lyrics)
     const isSynced = lyrics.length > 0 && typeof lyrics[0] !== 'string'
     if (lyricsHash !== lastLyricsHash) {
-      renderLyrics(lyrics, textColor)
+      renderLyrics(lyrics)
       lastLyricsHash = lyricsHash
     }
     if (isSynced) {
-      pickLyrics(pick, textColor)
+      pickLyrics(pick)
     }
   } else if (command === 'clearLyrics') {
     clearLyrics()
   } else if (command === 'pickLyrics') {
-    pickLyrics(pick, textColor)
+    pickLyrics(pick)
+  } else if (command === 'syncError') {
+    showSyncError(event.data.message)
   }
 })
 
-function renderLyrics(lyrics, textColor) {
+// Tell the extension host we're ready to receive messages. Anything it
+// broadcast before this listener was attached above may have been dropped.
+vscode.postMessage({ command: 'ready' })
+
+function showSyncError(message) {
+  const syncError = document.getElementById('sync-error')
+  if (!syncError) {
+    return
+  }
+  if (!message) {
+    syncError.hidden = true
+    syncError.textContent = ''
+    return
+  }
+  syncError.hidden = false
+  syncError.textContent = message
+}
+
+function renderLyrics(lyrics) {
   const box = document.querySelector('.box')
   box.innerHTML = ''
   currentActiveLine = null
@@ -80,24 +92,17 @@ function renderLyrics(lyrics, textColor) {
   if (allStrings) {
     const note = document.createElement('div')
     note.className = 'lyrics-note'
-    note.style.color = textColor
     note.textContent = "These lyrics aren't synced to the song yet."
     box.appendChild(note)
     lyrics.forEach((text) => {
       const div = document.createElement('div')
       div.className = 'line current'
-      div.style.opacity = '1'
       div.textContent = text
       box.appendChild(div)
     })
   } else {
     lyrics.forEach((line) => {
       const div = document.createElement('div')
-      if (mobileMode) {
-        div.style.color = '#000000'
-      } else {
-        div.style.color = textColor
-      }
       div.className = 'line future'
       div.textContent = line.text || '♪'
       div.dataset.lyricsId = line.id
@@ -129,7 +134,7 @@ function clearLyrics() {
   setSyncButtonVisibility(false)
 }
 
-function pickLyrics(id, textColor) {
+function pickLyrics(id) {
   if (id === lastPickId) {
     return
   }
@@ -149,31 +154,12 @@ function pickLyrics(id, textColor) {
 
   lines.forEach((line, index) => {
     line.classList.remove('past', 'current', 'future')
-
-    if (mobileMode) {
-      if (index <= pickedIndex) {
-        line.classList.add('current')
-        line.style.color = '#ffffff'
-        line.style.opacity = '1'
-      } else {
-        line.classList.add('future')
-        line.style.color = '#000000'
-        line.style.opacity = '1'
-      }
+    if (index < pickedIndex) {
+      line.classList.add('past')
+    } else if (index === pickedIndex) {
+      line.classList.add('current')
     } else {
-      if (index < pickedIndex) {
-        line.classList.add('past')
-        line.style.color = textColor
-        line.style.opacity = ''
-      } else if (index === pickedIndex) {
-        line.classList.add('current')
-        line.style.color = 'white'
-        line.style.opacity = ''
-      } else {
-        line.classList.add('future')
-        line.style.color = textColor
-        line.style.opacity = ''
-      }
+      line.classList.add('future')
     }
   })
   if (pickedIndex === -1) {

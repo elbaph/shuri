@@ -16,7 +16,6 @@
     "onCommand:shuri.logout",
     "onCommand:shuri.tracksCacheMaxSize",
     "onCommand:shuri.port",
-    "onCommand:shuri.mobileMode",
     "onCommand:shuri.songTitle",
     "onCommand:shuri.songIcon",
     "onCommand:shuri.songArtists",
@@ -44,11 +43,6 @@
           "minimum": 1,
           "maximum": 9007199254740991,
           "description": "Maximum cache size for tracks."
-        },
-        "shuri.mobileMode": {
-          "type": "boolean",
-          "default": false,
-          "description": "Mobile mode: black unplayed lines, white played lines."
         },
         "shuri.songTitle": {
           "type": "boolean",
@@ -79,10 +73,6 @@
       {
         "command": "shuri.tracksCacheMaxSize",
         "title": "Set Tracks Cache Max Size"
-      },
-      {
-        "command": "shuri.mobileMode",
-        "title": "Toggle Mobile Mode"
       },
       {
         "command": "shuri.port",
@@ -160,7 +150,6 @@
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
-    "@types/colorthief": "^2.6.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/node-fetch": "^2.6.13",
@@ -178,7 +167,6 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "colorthief": "^2.6.0",
     "lru-cache": "^7.18.3",
     "node-fetch": "^2.7.0",
     "ts-treemap": "^1.1.0",
